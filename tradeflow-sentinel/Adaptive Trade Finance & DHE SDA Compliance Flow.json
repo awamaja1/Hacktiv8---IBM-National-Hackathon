@@ -1,0 +1,464 @@
+{
+  "data": {
+    "edges": [
+      {
+        "animated": false,
+        "className": "",
+        "data": {
+          "sourceHandle": {
+            "dataType": "TradeDocumentInput",
+            "id": "TradeDocumentInput-g8yFH",
+            "name": "document_set",
+            "output_types": [
+              "JSON"
+            ]
+          },
+          "targetHandle": {
+            "fieldName": "document_set",
+            "id": "ComplianceEngine-ojWAV",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "other"
+          }
+        },
+        "id": "xy-edge__TradeDocumentInput-g8yFH{œdataTypeœ:œTradeDocumentInputœ,œidœ:œTradeDocumentInput-g8yFHœ,œnameœ:œdocument_setœ,œoutput_typesœ:[œJSONœ]}-ComplianceEngine-ojWAV{œfieldNameœ:œdocument_setœ,œidœ:œComplianceEngine-ojWAVœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "selected": false,
+        "source": "TradeDocumentInput-g8yFH",
+        "sourceHandle": "{œdataTypeœ:œTradeDocumentInputœ,œidœ:œTradeDocumentInput-g8yFHœ,œnameœ:œdocument_setœ,œoutput_typesœ:[œJSONœ]}",
+        "target": "ComplianceEngine-ojWAV",
+        "targetHandle": "{œfieldNameœ:œdocument_setœ,œidœ:œComplianceEngine-ojWAVœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}"
+      },
+      {
+        "animated": false,
+        "className": "",
+        "data": {
+          "sourceHandle": {
+            "dataType": "ComplianceEngine",
+            "id": "ComplianceEngine-ojWAV",
+            "name": "compliance_findings",
+            "output_types": [
+              "JSON"
+            ]
+          },
+          "targetHandle": {
+            "fieldName": "compliance_findings",
+            "id": "ComplianceReport-92PNV",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "other"
+          }
+        },
+        "id": "xy-edge__ComplianceEngine-ojWAV{œdataTypeœ:œComplianceEngineœ,œidœ:œComplianceEngine-ojWAVœ,œnameœ:œcompliance_findingsœ,œoutput_typesœ:[œJSONœ]}-ComplianceReport-92PNV{œfieldNameœ:œcompliance_findingsœ,œidœ:œComplianceReport-92PNVœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "selected": false,
+        "source": "ComplianceEngine-ojWAV",
+        "sourceHandle": "{œdataTypeœ:œComplianceEngineœ,œidœ:œComplianceEngine-ojWAVœ,œnameœ:œcompliance_findingsœ,œoutput_typesœ:[œJSONœ]}",
+        "target": "ComplianceReport-92PNV",
+        "targetHandle": "{œfieldNameœ:œcompliance_findingsœ,œidœ:œComplianceReport-92PNVœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}"
+      }
+    ],
+    "nodes": [
+      {
+        "data": {
+          "id": "ComplianceEngine-ojWAV",
+          "node": {
+            "base_classes": [
+              "JSON"
+            ],
+            "beta": false,
+            "conditional_paths": [],
+            "custom_fields": {},
+            "description": "Deterministic UCP 600 Art. 18/20 cross-check + SOLAS IMO checksum + AISHub vessel proximity + World Bank price deviation + versioned Indonesia DHE SDA compliance engine. Connect input ← Document Input, output → Compliance Report.",
+            "display_name": "⚖️ Compliance Engine",
+            "documentation": "",
+            "edited": false,
+            "field_order": [
+              "document_set"
+            ],
+            "frozen": false,
+            "icon": "shield-check",
+            "legacy": false,
+            "lf_version": "1.12.3",
+            "metadata": {
+              "code_hash": "79ee0892c914",
+              "dependencies": {
+                "dependencies": [
+                  {
+                    "name": "langflow",
+                    "version": "1.12.3"
+                  }
+                ],
+                "total_dependencies": 1
+              },
+              "module": "custom_components._compliance_engine"
+            },
+            "minimized": false,
+            "output_types": [],
+            "outputs": [
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Compliance Findings",
+                "group_outputs": false,
+                "method": "run_checks",
+                "name": "compliance_findings",
+                "selected": "JSON",
+                "tool_mode": true,
+                "types": [
+                  "JSON"
+                ],
+                "value": "__UNDEFINED__"
+              }
+            ],
+            "pinned": false,
+            "template": {
+              "_type": "Component",
+              "code": {
+                "advanced": true,
+                "api_editable": false,
+                "dynamic": true,
+                "fileTypes": [],
+                "file_path": "",
+                "info": "",
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "code",
+                "password": false,
+                "placeholder": "",
+                "required": true,
+                "show": true,
+                "title_case": false,
+                "type": "code",
+                "value": "\"\"\"\nTradeFlow Sentinel — Node 2: Compliance Engine\n===============================================\nReceives the structured document set from Node 1 (Trade Document Input)\nand runs all deterministic compliance checks:\n  - UCP 600 Art. 18 (Commercial Invoice cross-check)\n  - UCP 600 Art. 20 (Bill of Lading cross-check)\n  - SOLAS IMO Number Checksum\n  - AISHub Vessel Proximity Validation\n  - World Bank Pink Sheet Price Deviation\n  - Versioned DHE SDA Regulatory Compliance\n\nSelf-contained: no cross-file Python imports.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport math\nimport os\nimport re\nfrom typing import Any\n\nfrom langflow.custom import Component\nfrom langflow.io import HandleInput, Output\nfrom langflow.schema import Data\n\n# ---------------------------------------------------------------------------\n# CONSTANTS\n# ---------------------------------------------------------------------------\nPORT_PROXIMITY_THRESHOLD_NM = float(os.getenv(\"PORT_PROXIMITY_THRESHOLD_NM\", \"10.0\"))\nPRICE_DEVIATION_MAX_DEFAULT_PCT = float(os.getenv(\"PRICE_DEVIATION_MAX_DEFAULT_PCT\", \"10.0\"))\n\n\n# ---------------------------------------------------------------------------\n# SOLAS IMO CHECKSUM\n# ---------------------------------------------------------------------------\n\ndef _solas_imo_checksum(imo_str: str) -> tuple[bool, int]:\n    digits = re.sub(r\"[^0-9]\", \"\", imo_str)\n    if len(digits) != 7:\n        return False, -1\n    total = sum(int(digits[i]) * (7 - i) for i in range(6))\n    check = total % 10\n    return check == int(digits[6]), check\n\n\n# ---------------------------------------------------------------------------\n# HAVERSINE DISTANCE\n# ---------------------------------------------------------------------------\n\ndef _haversine_nm(lat1: float, lon1: float, lat2: float, lon2: float) -> float:\n    R_NM = 3440.065\n    phi1, phi2 = math.radians(lat1), math.radians(lat2)\n    dphi = math.radians(lat2 - lat1)\n    dlam = math.radians(lon2 - lon1)\n    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2) ** 2\n    return 2 * R_NM * math.asin(math.sqrt(a))\n\n\n# ---------------------------------------------------------------------------\n# DETERMINISTIC TRADE COMPLIANCE ENGINE\n# ---------------------------------------------------------------------------\n\ndef _run_deterministic_engine(case: dict, lc_ref: dict, rules: dict,\n                               vessel: dict, port_coords: dict, benchmark: dict) -> dict:\n    findings: dict[str, Any] = {\n        \"checks\": {},\n        \"discrepancies\": [],\n        \"overall_status\": \"COMPLIANT\",\n    }\n\n    inv = case[\"commercial_invoice\"]\n    bol = case[\"bill_of_lading\"]\n    dhe = case[\"dhe_sda_transaction\"]\n\n    # ── UCP 600 Art. 18 — Commercial Invoice ──────────────────────────\n    art18: dict[str, Any] = {\"rule\": \"UCP 600 Art. 18 — Commercial Invoice\"}\n    ci_issues: list[str] = []\n    if inv[\"seller\"].upper() != lc_ref[\"beneficiary\"].upper():\n        ci_issues.append(f\"Seller '{inv['seller']}' ≠ LC beneficiary '{lc_ref['beneficiary']}'\")\n    if inv[\"buyer\"].upper() != lc_ref[\"applicant\"].upper():\n        ci_issues.append(f\"Buyer '{inv['buyer']}' ≠ LC applicant '{lc_ref['applicant']}'\")\n    if inv[\"currency\"] != lc_ref[\"currency\"]:\n        ci_issues.append(f\"Currency mismatch: invoice '{inv['currency']}' ≠ LC '{lc_ref['currency']}'\")\n    if abs(inv[\"total_fob_usd\"] - lc_ref[\"amount\"]) > lc_ref[\"amount\"] * lc_ref[\"tolerance_pct\"] / 100:\n        ci_issues.append(\n            f\"Amount mismatch: invoice USD {inv['total_fob_usd']:,} outside LC \"\n            f\"USD {lc_ref['amount']:,} ± {lc_ref['tolerance_pct']}%\"\n        )\n    if inv[\"incoterms\"] != lc_ref[\"incoterms\"]:\n        ci_issues.append(f\"Incoterms mismatch: '{inv['incoterms']}' ≠ '{lc_ref['incoterms']}'\")\n    art18[\"status\"] = \"PASS\" if not ci_issues else \"FAIL\"\n    art18[\"issues\"] = ci_issues\n    findings[\"checks\"][\"ucp_art18_invoice\"] = art18\n    if ci_issues:\n        findings[\"discrepancies\"].extend(ci_issues)\n\n    # ── UCP 600 Art. 20 — Bill of Lading ──────────────────────────────\n    art20: dict[str, Any] = {\"rule\": \"UCP 600 Art. 20 — Bill of Lading\"}\n    bl_issues: list[str] = []\n    if bol[\"port_of_loading\"].upper() != lc_ref[\"port_of_loading\"].upper():\n        bl_issues.append(\n            f\"Port of loading mismatch: BoL '{bol['port_of_loading']}' ≠ LC '{lc_ref['port_of_loading']}'\"\n        )\n    if bol[\"port_of_discharge\"].upper() != lc_ref[\"port_of_discharge\"].upper():\n        bl_issues.append(\n            f\"Port of discharge mismatch: BoL '{bol['port_of_discharge']}' ≠ LC '{lc_ref['port_of_discharge']}'\"\n        )\n    if bol[\"on_board_date\"] > lc_ref[\"latest_shipment_date\"]:\n        bl_issues.append(\n            f\"On-board date {bol['on_board_date']} is after LC latest shipment date \"\n            f\"{lc_ref['latest_shipment_date']}\"\n        )\n\n    # ── AISHub Vessel Proximity ───────────────────────────────────────\n    distance_nm = round(_haversine_nm(\n        vessel[\"lat\"], vessel[\"lon\"],\n        port_coords[\"lat\"], port_coords[\"lon\"]\n    ), 2)\n    aishu_check: dict[str, Any] = {\n        \"rule\": \"AISHub Vessel Proximity (on-board date)\",\n        \"vessel\": vessel[\"vessel_name\"],\n        \"imo\": vessel[\"imo\"],\n        \"snapshot_date\": vessel[\"snapshot_date\"],\n        \"vessel_position\": {\"lat\": vessel[\"lat\"], \"lon\": vessel[\"lon\"]},\n        \"port\": port_coords.get(\"port\"),\n        \"port_position\": {\"lat\": port_coords[\"lat\"], \"lon\": port_coords[\"lon\"]},\n        \"distance_nm\": distance_nm,\n        \"threshold_nm\": PORT_PROXIMITY_THRESHOLD_NM,\n    }\n    if distance_nm > PORT_PROXIMITY_THRESHOLD_NM:\n        msg = (\n            f\"PREDATED BoL (UCP 600 Art. 20): vessel {vessel['vessel_name']} \"\n            f\"(IMO {vessel['imo']}) was {distance_nm} NM from {port_coords.get('port')} \"\n            f\"on {vessel['snapshot_date']} — physically impossible to be on-board at that port\"\n        )\n        bl_issues.append(msg)\n        aishu_check[\"status\"] = \"FAIL\"\n        aishu_check[\"finding\"] = msg\n    else:\n        aishu_check[\"status\"] = \"PASS\"\n        aishu_check[\"finding\"] = f\"Vessel confirmed within {distance_nm} NM of loading port\"\n    art20[\"status\"] = \"PASS\" if not bl_issues else \"FAIL\"\n    art20[\"issues\"] = bl_issues\n    findings[\"checks\"][\"ucp_art20_bol\"] = art20\n    findings[\"checks\"][\"aishu_proximity\"] = aishu_check\n    if bl_issues:\n        findings[\"discrepancies\"].extend(bl_issues)\n\n    # ── SOLAS IMO Checksum ────────────────────────────────────────────\n    imo_valid, imo_check_digit = _solas_imo_checksum(bol[\"imo_number\"])\n    findings[\"checks\"][\"imo_solas\"] = {\n        \"rule\": \"SOLAS — IMO Number Checksum\",\n        \"imo\": bol[\"imo_number\"],\n        \"computed_check_digit\": imo_check_digit,\n        \"status\": \"PASS\" if imo_valid else \"FAIL\",\n    }\n    if not imo_valid:\n        findings[\"discrepancies\"].append(f\"Invalid IMO checksum for {bol['imo_number']}\")\n\n    # ── World Bank Pink Sheet — Price Deviation ───────────────────────\n    wb_price = benchmark[\"benchmark_price\"]\n    wb_tolerance = benchmark.get(\"tolerance_pct\", PRICE_DEVIATION_MAX_DEFAULT_PCT)\n    inv_price = inv[\"unit_price_usd_mt\"]\n    deviation_pct = round(((inv_price - wb_price) / wb_price) * 100, 2)\n    price_check: dict[str, Any] = {\n        \"rule\": \"World Bank Pink Sheet — Unit Price Deviation\",\n        \"commodity\": benchmark.get(\"description\"),\n        \"hs_code\": benchmark.get(\"hs_code\"),\n        \"invoice_price_usd_mt\": inv_price,\n        \"benchmark_price_usd_mt\": wb_price,\n        \"deviation_pct\": deviation_pct,\n        \"tolerance_pct\": wb_tolerance,\n    }\n    if abs(deviation_pct) > wb_tolerance:\n        msg = (\n            f\"Price deviation {deviation_pct:+.2f}% exceeds tolerance ±{wb_tolerance}% \"\n            f\"(invoice ${inv_price}/MT vs benchmark ${wb_price}/MT)\"\n        )\n        price_check[\"status\"] = \"FAIL\"\n        price_check[\"finding\"] = msg\n        findings[\"discrepancies\"].append(msg)\n    else:\n        price_check[\"status\"] = \"PASS\"\n        price_check[\"finding\"] = f\"Price within tolerance: {deviation_pct:+.2f}%\"\n    findings[\"checks\"][\"price_deviation\"] = price_check\n\n    # ── Versioned DHE SDA Evaluator ───────────────────────────────────\n    rule_version = case.get(\"dhe_rule_version\", \"PADG_16_2026\")\n    active_rule = rules[rule_version]\n    fob = dhe[\"fob_usd\"]\n    fx_pct = dhe.get(\"requested_fx_conversion_pct\", 0)\n    hold_months = dhe.get(\"hold_period_months\", 0)\n    dhe_issues: list[str] = []\n\n    if fob < active_rule[\"fob_threshold_usd\"]:\n        findings[\"checks\"][\"dhe_sda\"] = {\n            \"rule\": f\"DHE SDA ({rule_version})\",\n            \"status\": \"NOT_APPLICABLE\",\n            \"finding\": f\"FOB USD {fob:,} below threshold USD {active_rule['fob_threshold_usd']:,}\",\n        }\n    else:\n        if hold_months < active_rule[\"min_hold_months\"]:\n            dhe_issues.append(\n                f\"Hold period {hold_months}m < required {active_rule['min_hold_months']}m \"\n                f\"under {rule_version}\"\n            )\n        if fx_pct > active_rule[\"fx_conversion_to_idr_max_pct\"]:\n            dhe_issues.append(\n                f\"Requested FX conversion {fx_pct}% exceeds {rule_version} maximum \"\n                f\"{active_rule['fx_conversion_to_idr_max_pct']}%\"\n            )\n        if rule_version == \"PADG_16_2026\":\n            himbara_banks = [b.upper() for b in active_rule[\"bank_categories\"][\"HIMBARA\"]]\n            nominated = dhe.get(\"nominated_bank\", \"\").upper()\n            is_himbara = any(h.split(\"(\")[0].strip() in nominated for h in himbara_banks)\n            if not is_himbara:\n                dhe_issues.append(\n                    f\"Nominated bank '{dhe.get('nominated_bank')}' is NOT a Himbara state-owned bank. \"\n                    f\"{rule_version} restricts placement to: \"\n                    f\"{', '.join(active_rule['bank_categories']['HIMBARA'])}\"\n                )\n            placement_type = dhe.get(\"placement_type\", \"\")\n            if \"Reksus\" not in placement_type:\n                dhe_issues.append(\n                    f\"Placement type '{placement_type}' is not a Reksus DHE SDA account \"\n                    f\"as required by {rule_version}\"\n                )\n        findings[\"checks\"][\"dhe_sda\"] = {\n            \"rule\": f\"DHE SDA ({rule_version})\",\n            \"legal_basis\": active_rule[\"legal_basis\"],\n            \"fob_usd\": fob,\n            \"threshold_usd\": active_rule[\"fob_threshold_usd\"],\n            \"retention_required_pct\": active_rule[\"retention_pct\"],\n            \"min_hold_months\": active_rule[\"min_hold_months\"],\n            \"fx_conversion_max_pct\": active_rule[\"fx_conversion_to_idr_max_pct\"],\n            \"requested_fx_conversion_pct\": fx_pct,\n            \"nominated_bank\": dhe.get(\"nominated_bank\"),\n            \"bank_category\": dhe.get(\"bank_category\", \"\"),\n            \"status\": \"PASS\" if not dhe_issues else \"FAIL\",\n            \"issues\": dhe_issues,\n        }\n        if dhe_issues:\n            findings[\"discrepancies\"].extend(dhe_issues)\n\n    findings[\"overall_status\"] = \"COMPLIANT\" if not findings[\"discrepancies\"] else \"DISCREPANT\"\n    findings[\"discrepancy_count\"] = len(findings[\"discrepancies\"])\n    return findings\n\n\n# ---------------------------------------------------------------------------\n# LANGFLOW COMPONENT — NODE 2: Compliance Engine\n# ---------------------------------------------------------------------------\n\nclass ComplianceEngineComponent(Component):\n    \"\"\"\n    Node 2 — Runs UCP 600 Art. 18/20 + SOLAS + AISHub + Price Deviation\n    + DHE SDA checks on the document set received from Node 1.\n\n    Connects: ⬅ Trade Document Input (Node 1)  ⮕  Compliance Report (Node 3)\n    \"\"\"\n\n    display_name = \"⚖️ Compliance Engine\"\n    description = (\n        \"Deterministic UCP 600 Art. 18/20 cross-check + SOLAS IMO checksum \"\n        \"+ AISHub vessel proximity + World Bank price deviation \"\n        \"+ versioned Indonesia DHE SDA compliance engine. \"\n        \"Connect input ← Document Input, output → Compliance Report.\"\n    )\n    icon = \"shield-check\"\n    name = \"ComplianceEngine\"\n\n    inputs = [\n        HandleInput(\n            name=\"document_set\",\n            display_name=\"Document Set\",\n            input_types=[\"Data\"],\n            info=\"Connect from Trade Document Input node's 'Document Set' output.\",\n        ),\n    ]\n\n    outputs = [\n        Output(\n            name=\"compliance_findings\",\n            display_name=\"Compliance Findings\",\n            method=\"run_checks\",\n        ),\n    ]\n\n    def run_checks(self) -> Data:\n        import time\n\n        t_start = time.perf_counter()\n\n        doc: dict = self.document_set.data if hasattr(self.document_set, \"data\") else self.document_set\n\n        case = doc[\"case\"]\n        case[\"dhe_rule_version\"] = doc[\"dhe_rule_version\"]\n\n        findings = _run_deterministic_engine(\n            case=case,\n            lc_ref=doc[\"lc_ref\"],\n            rules=doc[\"dhe_rules\"],\n            vessel=doc[\"vessel\"],\n            port_coords=doc[\"port_coords\"],\n            benchmark=doc[\"benchmark\"],\n        )\n\n        t_elapsed_ms = round((time.perf_counter() - t_start) * 1000, 1)\n\n        return Data(data={\n            \"case_id\": doc[\"case_id\"],\n            \"dhe_rule_version\": doc[\"dhe_rule_version\"],\n            \"findings\": findings,\n            \"guardrail_1_warnings\": doc.get(\"guardrail_1_warnings\", []),\n            \"processing_time_ms\": t_elapsed_ms,\n        })\n"
+              },
+              "document_set": {
+                "_input_type": "HandleInput",
+                "advanced": false,
+                "api_editable": false,
+                "display_name": "Document Set",
+                "dynamic": false,
+                "info": "Connect from Trade Document Input node's 'Document Set' output.",
+                "input_types": [
+                  "Data"
+                ],
+                "list": false,
+                "list_add_label": "Add More",
+                "name": "document_set",
+                "override_skip": false,
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "track_in_telemetry": false,
+                "type": "other",
+                "value": ""
+              }
+            },
+            "tool_mode": false
+          },
+          "showNode": true,
+          "type": "ComplianceEngine"
+        },
+        "dragging": false,
+        "id": "ComplianceEngine-ojWAV",
+        "measured": {
+          "height": 250,
+          "width": 320
+        },
+        "position": {
+          "x": 461.15098634294384,
+          "y": 182.83383915022762
+        },
+        "selected": false,
+        "type": "genericNode"
+      },
+      {
+        "data": {
+          "id": "TradeDocumentInput-g8yFH",
+          "node": {
+            "base_classes": [
+              "JSON"
+            ],
+            "beta": false,
+            "conditional_paths": [],
+            "custom_fields": {},
+            "description": "Loads trade case data (LC, Invoice, BoL, DHE) and applies Guardrail 1 (PII masking, injection detection). Connect output → Compliance Engine node.",
+            "display_name": "📄 Trade Document Input",
+            "documentation": "",
+            "edited": false,
+            "field_order": [
+              "case_id",
+              "dhe_rule_version"
+            ],
+            "frozen": false,
+            "icon": "file-text",
+            "legacy": false,
+            "lf_version": "1.12.3",
+            "metadata": {
+              "code_hash": "24ffae863b50",
+              "dependencies": {
+                "dependencies": [
+                  {
+                    "name": "langflow",
+                    "version": "1.12.3"
+                  }
+                ],
+                "total_dependencies": 1
+              },
+              "module": "custom_components._trade_document_input"
+            },
+            "minimized": false,
+            "output_types": [],
+            "outputs": [
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Document Set",
+                "group_outputs": false,
+                "method": "load_documents",
+                "name": "document_set",
+                "selected": "JSON",
+                "tool_mode": true,
+                "types": [
+                  "JSON"
+                ],
+                "value": "__UNDEFINED__"
+              }
+            ],
+            "pinned": false,
+            "template": {
+              "_type": "Component",
+              "case_id": {
+                "_input_type": "DropdownInput",
+                "advanced": false,
+                "api_editable": false,
+                "combobox": false,
+                "dialog_inputs": {},
+                "display_name": "Case ID",
+                "dynamic": false,
+                "external_options": {},
+                "info": "CASE_1: Compliant CPO export — expects COMPLIANT, 0 violations. CASE_2: Discrepant Coal export — expects DISCREPANT, 5 violations.",
+                "name": "case_id",
+                "options": [
+                  "CASE_1_COMPLIANT_CPO",
+                  "CASE_2_DISCREPANT_COAL"
+                ],
+                "options_metadata": [],
+                "override_skip": false,
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "toggle": false,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "track_in_telemetry": true,
+                "type": "str",
+                "value": "CASE_1_COMPLIANT_CPO"
+              },
+              "code": {
+                "advanced": true,
+                "api_editable": false,
+                "dynamic": true,
+                "fileTypes": [],
+                "file_path": "",
+                "info": "",
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "code",
+                "password": false,
+                "placeholder": "",
+                "required": true,
+                "show": true,
+                "title_case": false,
+                "type": "code",
+                "value": "\"\"\"\nTradeFlow Sentinel — Node 1: Trade Document Input\n==================================================\nLoads synthetic trade case data, applies Guardrail 1 (input\nsanitisation), and outputs a structured document set for the\nCompliance Engine node downstream.\n\nSelf-contained: no cross-file Python imports.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport json\nimport os\nimport re\nfrom pathlib import Path\nfrom typing import Any\n\nfrom langflow.custom import Component\nfrom langflow.io import DropdownInput, Output\nfrom langflow.schema import Data\n\n# ---------------------------------------------------------------------------\n# CONSTANTS\n# ---------------------------------------------------------------------------\nDATA_FILE = Path(os.getenv(\"DATA_FILE\", \"/app/synthetic_data_and_rules.json\"))\n\n_INJECTION_PATTERNS = re.compile(\n    r\"(ignore\\s+(previous|all)\\s+instructions?|\"\n    r\"system\\s*:\\s*you\\s+are|\"\n    r\"<\\|im_start\\|>|<\\|im_end\\|>|\"\n    r\"\\bDAN\\b|\"\n    r\"forget\\s+(everything|your\\s+instructions?)|\"\n    r\"pretend\\s+you\\s+are|\"\n    r\"act\\s+as\\s+if\\s+you\\s+have\\s+no\\s+restrict)\",\n    flags=re.IGNORECASE,\n)\n_ACCOUNT_PATTERN = re.compile(r\"\\b(\\d{6,20})\\b\")\n_EMAIL_PATTERN = re.compile(r\"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\")\n\n\n# ---------------------------------------------------------------------------\n# DATA LOADER\n# ---------------------------------------------------------------------------\n\ndef _load_data() -> dict:\n    if not DATA_FILE.exists():\n        raise FileNotFoundError(f\"Data file not found: {DATA_FILE}\")\n    with DATA_FILE.open(\"r\", encoding=\"utf-8\") as fh:\n        return json.load(fh)\n\n\n# ---------------------------------------------------------------------------\n# GUARDRAIL 1 — INPUT SANITISATION\n# ---------------------------------------------------------------------------\n\ndef _guardrail_input(text: str) -> tuple[str, list[str]]:\n    warnings: list[str] = []\n    if _INJECTION_PATTERNS.search(text):\n        raise ValueError(\n            \"GUARDRAIL_1_BLOCKED: Prompt injection pattern detected. Request rejected.\"\n        )\n    sanitised = _EMAIL_PATTERN.sub(\"[EMAIL_REDACTED]\", text)\n\n    def _mask_account(m: re.Match) -> str:\n        digits = m.group(1)\n        if len(digits) >= 10:\n            warnings.append(f\"PII_MASKED: account number ending ...{digits[-4:]}\")\n            return f\"[ACCT_REDACTED_{digits[-4:]}]\"\n        return digits\n\n    sanitised = _ACCOUNT_PATTERN.sub(_mask_account, sanitised)\n    return sanitised, warnings\n\n\n# ---------------------------------------------------------------------------\n# LANGFLOW COMPONENT — NODE 1: Trade Document Input\n# ---------------------------------------------------------------------------\n\nclass TradeDocumentInputComponent(Component):\n    \"\"\"\n    Node 1 — Loads a synthetic trade case, applies input guardrails,\n    and outputs the parsed document set for downstream compliance checks.\n\n    Connects to: ⮕ Compliance Engine (Node 2)\n    \"\"\"\n\n    display_name = \"📄 Trade Document Input\"\n    description = (\n        \"Loads trade case data (LC, Invoice, BoL, DHE) and applies \"\n        \"Guardrail 1 (PII masking, injection detection). \"\n        \"Connect output → Compliance Engine node.\"\n    )\n    icon = \"file-text\"\n    name = \"TradeDocumentInput\"\n\n    inputs = [\n        DropdownInput(\n            name=\"case_id\",\n            display_name=\"Case ID\",\n            options=[\"CASE_1_COMPLIANT_CPO\", \"CASE_2_DISCREPANT_COAL\"],\n            value=\"CASE_1_COMPLIANT_CPO\",\n            info=(\n                \"CASE_1: Compliant CPO export — expects COMPLIANT, 0 violations. \"\n                \"CASE_2: Discrepant Coal export — expects DISCREPANT, 5 violations.\"\n            ),\n        ),\n        DropdownInput(\n            name=\"dhe_rule_version\",\n            display_name=\"DHE SDA Rule Version\",\n            options=[\"BASELINE_PRE_2025\", \"PP_8_2025\", \"PADG_16_2026\"],\n            value=\"PADG_16_2026\",\n            info=(\n                \"Active rule: PADG_16_2026 (effective 2026-06-01). \"\n                \"Switch versions for live regulatory comparison demo.\"\n            ),\n        ),\n    ]\n\n    outputs = [\n        Output(\n            name=\"document_set\",\n            display_name=\"Document Set\",\n            method=\"load_documents\",\n        ),\n    ]\n\n    def load_documents(self) -> Data:\n        data = _load_data()\n        cases = data[\"cases\"]\n\n        if self.case_id not in cases:\n            raise ValueError(\n                f\"Unknown case_id '{self.case_id}'. \"\n                f\"Available: {list(cases.keys())}\"\n            )\n\n        case = cases[self.case_id]\n        dhe_rule_version = self.dhe_rule_version or data[\"_meta\"][\"active_rule_version\"]\n\n        # Apply Guardrail 1\n        g1_warnings: list[str] = []\n        for field in [\"goods_description\"]:\n            _, w = _guardrail_input(case[\"commercial_invoice\"].get(field, \"\"))\n            g1_warnings.extend(w)\n            _, w2 = _guardrail_input(case[\"bill_of_lading\"].get(field, \"\"))\n            g1_warnings.extend(w2)\n\n        # Resolve references\n        lc_ref = data[\"lc_mt700_reference\"][case[\"lc_reference\"]]\n        imo_key = f\"IMO{case['bill_of_lading']['imo_number']}\"\n        vessel = data[\"aishu_vessel_snapshots\"][\"vessels\"][imo_key]\n\n        port_name = lc_ref[\"port_of_loading\"]\n        port_coords_db = {\n            \"TANJUNG_PERAK\": data[\"aishu_vessel_snapshots\"][\"TANJUNG_PERAK_COORDS\"],\n            \"TANJUNG_PRIOK\": data[\"aishu_vessel_snapshots\"][\"TANJUNG_PRIOK_COORDS\"],\n        }\n        port_coords = (\n            port_coords_db[\"TANJUNG_PERAK\"]\n            if (\"Perak\" in port_name or \"Surabaya\" in port_name)\n            else port_coords_db[\"TANJUNG_PRIOK\"]\n        )\n\n        hs = case[\"commercial_invoice\"][\"hs_code\"]\n        benchmarks = data[\"world_bank_pink_sheet_benchmarks\"][\"commodities\"]\n        benchmark = next(\n            (v for v in benchmarks.values() if v[\"hs_code\"] == hs),\n            {\"benchmark_price\": 0, \"tolerance_pct\": 5, \"description\": \"Unknown\", \"hs_code\": hs},\n        )\n\n        dhe_rules = data[\"dhe_sda_versions\"]\n        if dhe_rule_version not in dhe_rules:\n            raise ValueError(f\"Unknown DHE rule version '{dhe_rule_version}'\")\n\n        return Data(data={\n            \"case_id\": self.case_id,\n            \"dhe_rule_version\": dhe_rule_version,\n            \"case\": case,\n            \"lc_ref\": lc_ref,\n            \"vessel\": vessel,\n            \"port_coords\": port_coords,\n            \"benchmark\": benchmark,\n            \"dhe_rules\": dhe_rules,\n            \"guardrail_1_warnings\": g1_warnings,\n        })\n"
+              },
+              "dhe_rule_version": {
+                "_input_type": "DropdownInput",
+                "advanced": false,
+                "api_editable": false,
+                "combobox": false,
+                "dialog_inputs": {},
+                "display_name": "DHE SDA Rule Version",
+                "dynamic": false,
+                "external_options": {},
+                "info": "Active rule: PADG_16_2026 (effective 2026-06-01). Switch versions for live regulatory comparison demo.",
+                "name": "dhe_rule_version",
+                "options": [
+                  "BASELINE_PRE_2025",
+                  "PP_8_2025",
+                  "PADG_16_2026"
+                ],
+                "options_metadata": [],
+                "override_skip": false,
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "toggle": false,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "track_in_telemetry": true,
+                "type": "str",
+                "value": "PADG_16_2026"
+              }
+            },
+            "tool_mode": false
+          },
+          "showNode": true,
+          "type": "TradeDocumentInput"
+        },
+        "dragging": false,
+        "id": "TradeDocumentInput-g8yFH",
+        "measured": {
+          "height": 339,
+          "width": 320
+        },
+        "position": {
+          "x": 75,
+          "y": 132
+        },
+        "selected": false,
+        "type": "genericNode"
+      },
+      {
+        "data": {
+          "id": "ComplianceReport-92PNV",
+          "node": {
+            "base_classes": [
+              "JSON"
+            ],
+            "beta": false,
+            "conditional_paths": [],
+            "custom_fields": {},
+            "description": "Generates IBM Bob AI synthesis (mock or live watsonx), applies Guardrail 2 (numerical faithfulness), and outputs the final compliance report with ROI metrics. Connect input ← Compliance Engine.",
+            "display_name": "📊 Compliance Report",
+            "documentation": "",
+            "edited": false,
+            "field_order": [
+              "compliance_findings"
+            ],
+            "frozen": false,
+            "icon": "bar-chart-2",
+            "legacy": false,
+            "lf_version": "1.12.3",
+            "metadata": {
+              "code_hash": "01191897884f",
+              "dependencies": {
+                "dependencies": [
+                  {
+                    "name": "langflow",
+                    "version": "1.12.3"
+                  },
+                  {
+                    "name": "ibm_watsonx_ai",
+                    "version": "1.6.0"
+                  }
+                ],
+                "total_dependencies": 2
+              },
+              "module": "custom_components._compliance_report"
+            },
+            "minimized": false,
+            "output_types": [],
+            "outputs": [
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Compliance Report",
+                "group_outputs": false,
+                "method": "generate_report",
+                "name": "compliance_report",
+                "selected": "JSON",
+                "tool_mode": true,
+                "types": [
+                  "JSON"
+                ],
+                "value": "__UNDEFINED__"
+              }
+            ],
+            "pinned": false,
+            "template": {
+              "_type": "Component",
+              "code": {
+                "advanced": true,
+                "api_editable": false,
+                "dynamic": true,
+                "fileTypes": [],
+                "file_path": "",
+                "info": "",
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "code",
+                "password": false,
+                "placeholder": "",
+                "required": true,
+                "show": true,
+                "title_case": false,
+                "type": "code",
+                "value": "\"\"\"\nTradeFlow Sentinel — Node 3: Compliance Report\n===============================================\nReceives compliance findings from Node 2 (Compliance Engine),\nruns IBM Bob synthesis (mock or live), applies Guardrail 2\n(numerical faithfulness), and outputs the final formatted report\nwith ROI metrics.\n\nSelf-contained: no cross-file Python imports.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport hashlib\nimport json\nimport os\nimport time\nfrom typing import Any\n\nfrom langflow.custom import Component\nfrom langflow.io import HandleInput, Output\nfrom langflow.schema import Data\n\n# ---------------------------------------------------------------------------\n# CONSTANTS\n# ---------------------------------------------------------------------------\nUSE_MOCK_LLM = os.getenv(\"USE_MOCK_LLM\", \"true\").lower() != \"false\"\nWATSONX_API_KEY = os.getenv(\"WATSONX_API_KEY\", \"\")\nWATSONX_PROJECT_ID = os.getenv(\"WATSONX_PROJECT_ID\", \"\")\nWATSONX_URL = os.getenv(\"WATSONX_URL\", \"https://us-south.ml.cloud.ibm.com\")\nWATSONX_MODEL = os.getenv(\"WATSONX_MODEL\", \"ibm/granite-3-3-8b-instruct\")\n\n\n# ---------------------------------------------------------------------------\n# MOCK / CACHED IBM BOB SYNTHESIS\n# ---------------------------------------------------------------------------\n\n_MOCK_CACHE: dict[str, str] = {}\n\n\ndef _mock_synthesis(findings: dict, case_id: str) -> str:\n    cache_key = hashlib.md5(json.dumps(findings, sort_keys=True).encode()).hexdigest()[:12]\n    if cache_key in _MOCK_CACHE:\n        return _MOCK_CACHE[cache_key]\n    status = findings[\"overall_status\"]\n    n_disc = findings[\"discrepancy_count\"]\n    disc_list = \"\\n\".join(f\"  - {d}\" for d in findings[\"discrepancies\"]) or \"  None\"\n    narrative = f\"\"\"[IBM Bob — Mock Synthesis | cache:{cache_key}]\n\nCASE: {case_id}\nOVERALL STATUS: {status}\nDISCREPANCIES FOUND: {n_disc}\n\n{disc_list}\n\nREGULATORY CONTEXT:\n  Active DHE SDA Rule: {findings['checks'].get('dhe_sda', {}).get('rule', 'N/A')}\n  Legal Basis: {findings['checks'].get('dhe_sda', {}).get('legal_basis', 'N/A')}\n\nRECOMMENDATION:\n{\"All documents comply with UCP 600 Art. 18/20 and DHE SDA obligations. Proceed to presentation.\" if status == \"COMPLIANT\" else\n \"Document set contains discrepancies requiring correction before presentation under UCP 600 Art. 16. \"\n \"Refer to findings above. DHE SDA violation must be resolved with compliant bank placement before proceeds repatriation.\"}\n\n[NOTE: USE_MOCK_LLM=true — no IBM watsonx API tokens consumed]\n\"\"\"\n    _MOCK_CACHE[cache_key] = narrative\n    return narrative\n\n\ndef _live_synthesis(findings: dict, case_id: str) -> str:\n    try:\n        from ibm_watsonx_ai import APIClient, Credentials  # type: ignore\n        from ibm_watsonx_ai.foundation_models import ModelInference  # type: ignore\n    except ImportError:\n        raise RuntimeError(\n            \"ibm-watsonx-ai package is required for live synthesis. \"\n            \"Install with: pip install ibm-watsonx-ai\"\n        )\n    prompt = f\"\"\"You are a senior Trade Finance compliance officer and IBM Bob agent.\nAnalyse the following deterministic compliance findings and produce a concise, factual\ncompliance synthesis referencing UCP 600 articles, ISBP 745, and Indonesia DHE SDA regulations.\nDo NOT invent numbers. Use only the figures provided in the findings JSON.\n\nCASE_ID: {case_id}\nFINDINGS:\n{json.dumps(findings, indent=2)}\n\nOutput format:\n1. Executive Summary (2 sentences)\n2. Discrepancy Detail (bullet per issue with article reference)\n3. DHE SDA Regulatory Assessment\n4. Recommended Action\n\"\"\"\n    creds = Credentials(api_key=WATSONX_API_KEY, url=WATSONX_URL)\n    client = APIClient(credentials=creds, project_id=WATSONX_PROJECT_ID)\n    model = ModelInference(model_id=WATSONX_MODEL, api_client=client,\n                           params={\"max_new_tokens\": 600, \"temperature\": 0.0})\n    return model.generate_text(prompt=prompt)\n\n\n# ---------------------------------------------------------------------------\n# GUARDRAIL 2 — OUTPUT NUMERICAL FAITHFULNESS\n# ---------------------------------------------------------------------------\n\ndef _guardrail_output(synthesis: str, findings: dict) -> tuple[str, list[str]]:\n    warnings: list[str] = []\n    price_check = findings[\"checks\"].get(\"price_deviation\", {})\n    if price_check:\n        dev = str(abs(price_check.get(\"deviation_pct\", 0)))\n        if dev != \"0.0\" and dev not in synthesis:\n            warnings.append(f\"GUARDRAIL_2: Price deviation {dev}% not found verbatim in synthesis\")\n    aishu = findings[\"checks\"].get(\"aishu_proximity\", {})\n    if aishu and aishu.get(\"status\") == \"FAIL\":\n        dist = str(aishu.get(\"distance_nm\", \"\"))\n        if dist and dist not in synthesis:\n            warnings.append(f\"GUARDRAIL_2: AISHub distance {dist} NM not found verbatim in synthesis\")\n    dhe = findings[\"checks\"].get(\"dhe_sda\", {})\n    if dhe and dhe.get(\"status\") == \"FAIL\":\n        fx = str(dhe.get(\"requested_fx_conversion_pct\", \"\"))\n        if fx and fx not in synthesis:\n            warnings.append(f\"GUARDRAIL_2: DHE SDA FX conversion {fx}% not found verbatim in synthesis\")\n    if warnings:\n        synthesis += (\n            \"\\n\\n⚠️  GUARDRAIL 2 WARNINGS (numerical faithfulness):\\n\"\n            + \"\\n\".join(f\"  • {w}\" for w in warnings)\n        )\n    return synthesis, warnings\n\n\n# ---------------------------------------------------------------------------\n# LANGFLOW COMPONENT — NODE 3: Compliance Report\n# ---------------------------------------------------------------------------\n\nclass ComplianceReportComponent(Component):\n    \"\"\"\n    Node 3 — Generates the final compliance report with IBM Bob synthesis,\n    Guardrail 2 checks, and ROI metrics.\n\n    Connects: ⬅ Compliance Engine (Node 2)\n    \"\"\"\n\n    display_name = \"📊 Compliance Report\"\n    description = (\n        \"Generates IBM Bob AI synthesis (mock or live watsonx), \"\n        \"applies Guardrail 2 (numerical faithfulness), and outputs \"\n        \"the final compliance report with ROI metrics. \"\n        \"Connect input ← Compliance Engine.\"\n    )\n    icon = \"bar-chart-2\"\n    name = \"ComplianceReport\"\n\n    inputs = [\n        HandleInput(\n            name=\"compliance_findings\",\n            display_name=\"Compliance Findings\",\n            input_types=[\"Data\"],\n            info=\"Connect from Compliance Engine node's 'Compliance Findings' output.\",\n        ),\n    ]\n\n    outputs = [\n        Output(\n            name=\"compliance_report\",\n            display_name=\"Compliance Report\",\n            method=\"generate_report\",\n        ),\n    ]\n\n    def generate_report(self) -> Data:\n        t_start = time.perf_counter()\n\n        doc: dict = (\n            self.compliance_findings.data\n            if hasattr(self.compliance_findings, \"data\")\n            else self.compliance_findings\n        )\n\n        case_id = doc[\"case_id\"]\n        findings = doc[\"findings\"]\n        engine_time_ms = doc.get(\"processing_time_ms\", 0)\n\n        # IBM Bob Synthesis\n        synthesis = (\n            _mock_synthesis(findings, case_id)\n            if USE_MOCK_LLM\n            else _live_synthesis(findings, case_id)\n        )\n        synthesis, g2_warnings = _guardrail_output(synthesis, findings)\n\n        report_time_ms = round((time.perf_counter() - t_start) * 1000, 1)\n        total_time_ms = round(engine_time_ms + report_time_ms, 1)\n\n        return Data(data={\n            \"case_id\": case_id,\n            \"dhe_rule_version_applied\": doc[\"dhe_rule_version\"],\n            \"overall_status\": findings[\"overall_status\"],\n            \"discrepancy_count\": findings[\"discrepancy_count\"],\n            \"processing_time_ms\": total_time_ms,\n            \"guardrail_1_warnings\": doc.get(\"guardrail_1_warnings\", []),\n            \"guardrail_2_warnings\": g2_warnings,\n            \"findings\": findings,\n            \"synthesis\": synthesis,\n            \"roi_context\": {\n                \"baseline_review_time_s\": 2700,\n                \"sentinel_time_ms\": total_time_ms,\n                \"sentinel_time_s\": round(total_time_ms / 1000, 3),\n                \"time_reduction_pct\": round((1 - (total_time_ms / 1000) / 2700) * 100, 2),\n            },\n        })\n"
+              },
+              "compliance_findings": {
+                "_input_type": "HandleInput",
+                "advanced": false,
+                "api_editable": false,
+                "display_name": "Compliance Findings",
+                "dynamic": false,
+                "info": "Connect from Compliance Engine node's 'Compliance Findings' output.",
+                "input_types": [
+                  "Data"
+                ],
+                "list": false,
+                "list_add_label": "Add More",
+                "name": "compliance_findings",
+                "override_skip": false,
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "track_in_telemetry": false,
+                "type": "other",
+                "value": ""
+              }
+            },
+            "tool_mode": false
+          },
+          "showNode": true,
+          "type": "ComplianceReport"
+        },
+        "dragging": false,
+        "id": "ComplianceReport-92PNV",
+        "measured": {
+          "height": 234,
+          "width": 320
+        },
+        "position": {
+          "x": 841.4924127465857,
+          "y": 188.84901365705616
+        },
+        "selected": false,
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 112.05459508644208,
+      "y": -63.580527752502235,
+      "zoom": 1.1992720655141038
+    }
+  },
+  "description": "TradeFlow Sentinel is a deterministic-first, AI-augmented compliance automation system.",
+  "endpoint_name": null,
+  "id": "4da97c32-54b4-4d9f-b37b-ce0df104cf04",
+  "is_component": false,
+  "last_tested_version": "1.12.3",
+  "locked": false,
+  "name": "Adaptive Trade Finance & DHE SDA Compliance Flow",
+  "tags": []
+}

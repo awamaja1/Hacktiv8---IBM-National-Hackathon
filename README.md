@@ -132,21 +132,22 @@ Reduction:         (2,700 - 0.004) / 2,700 × 100 = 99.9998% ≈ 99.8% (conserva
 ## 6. Repository Structure
 
 ```
-tradeflow-sentinel/
-├── AGENT.md                        # IBM Bob Agent role, UCP 600 Art. 5/18/20 rules, 2 Guardrails
-├── README_AND_BUSINESS_MODEL.md    # This file
-├── orchestrate_skill_openapi.json  # OpenAPI 3.0.1 spec for IBM watsonx Orchestrate custom skill
-├── synthetic_data_and_rules.json   # Versioned DHE SDA rules + 2 synthetic cases + benchmarks
-├── langflow_component.py           # Langflow custom component (v1 API — loaded by Langflow UI)
-├── _sentinel_engine.py             # Deterministic engine + FastAPI endpoint + IBM Bob synthesis
-├── .env                            # Active environment config (not committed)
-├── .env.example                    # Template — copy to .env and fill in secrets
-└── docker-compose.yml              # Zero-cost local Docker: Langflow :7860 + Sentinel API :8000
+Hackathon Project Root/
+├── README.md                       # This file (Project Overview & Business Model)
+├── Docs/                           # Project Artifacts
+│   ├── IMG/Screenshot 2026-09-27 201719.png       # Screenshot of the Langflow architecture
+│   └── MARKDOWN/prompt for phase 1 to IBM Bob.md  # Original prompt guiding this MVP
+├── tradeflow-sentinel/             # Core Backend & Langflow Setup
+│   ├── component_input.py          # Node 1: Document Input & Guardrail 1
+│   ├── component_engine.py         # Node 2: Deterministic Compliance Engine
+│   ├── component_output.py         # Node 3: IBM Bob Synthesis & Guardrail 2
+│   ├── Adaptive Trade Finance & DHE SDA Compliance Flow.json  # Langflow Flow Export
+│   ├── synthetic_data_and_rules.json   # DHE SDA rules + synthetic cases + benchmarks
+│   ├── orchestrate_skill_openapi.json  # OpenAPI 3.0.1 spec for watsonx Orchestrate
+│   ├── langflow_sentinel_engine.py     # Standalone FastAPI endpoint
+│   ├── .env.example                    # Template — copy to .env and fill in secrets
+│   └── docker-compose.yml              # Zero-cost local Docker: Langflow :7860 + Sentinel API :8000
 ```
-
-> **Note on file layout:** `langflow_component.py` is the only file Langflow's component scanner
-> processes. `_sentinel_engine.py` is placed in the `deactivated/` subdirectory inside the
-> container (Langflow skips that folder) and imported lazily at runtime by the component.
 
 ---
 
@@ -212,33 +213,29 @@ WATSONX_PROJECT_ID=your_project_id
 
 ### Run in Langflow UI (Visual Canvas Demo)
 
-Three flows are pre-built and available at **http://localhost:7860** once the stack is running.
+To see the full 3-node visual pipeline in action, you can import the pre-built flow configuration:
 
-| Flow | Case | DHE Rule | Expected |
-|---|---|---|---|
-| TradeFlow Sentinel — Case 1: Compliant CPO (PADG 16/2026) | `CASE_1_COMPLIANT_CPO` | `PADG_16_2026` | ✅ COMPLIANT — 0 violations |
-| TradeFlow Sentinel — Case 2: Discrepant Coal (PADG 16/2026) | `CASE_2_DISCREPANT_COAL` | `PADG_16_2026` | ❌ DISCREPANT — 5 violations |
-| TradeFlow Sentinel — Case 2: Regulatory Comparison (PP 8/2025 vs PADG 16/2026) | `CASE_2_DISCREPANT_COAL` | `PP_8_2025` | ❌ DISCREPANT — 2 violations (bank + FX violations removed by older rule) |
-
-**Step-by-step:**
-
-1. Open **http://localhost:7860** — log in with `admin` / `sentinel2025`
-2. From the home screen, click any of the three **TradeFlow Sentinel** flows
-3. On the canvas you will see two connected nodes:
+1. Open **http://localhost:7860** (no login required for local mock mode)
+2. On the main dashboard, click **Import** 
+3. Select and upload the `Adaptive Trade Finance & DHE SDA Compliance Flow.json` file included in this repository.
+4. Click on the imported flow to open it. You will see the 3-node architecture:
    ```
-   [ TradeFlow Sentinel ] ──► [ Chat Output ]
+   📄 Trade Document Input  ──►  ⚖️ Compliance Engine  ──►  📊 Compliance Report
    ```
-4. Click the **▶ Run** button on the **TradeFlow Sentinel** node (top-right corner of the component card) — do **not** use the Playground chat box; this is a source component driven by its own dropdown fields, not by a chat message
-5. A green checkmark appears on both nodes when execution completes
-6. Click the **Chat Output** node to expand it and read the full compliance report: overall status, discrepancy list, DHE SDA assessment, IBM Bob synthesis, and ROI metrics
+   ![Langflow Architecture](Docs/IMG/Screenshot%202026-09-27%20201719.png)
+5. To execute the compliance check, click **▶ Run** on the final node (**📊 Compliance Report**).
+6. Click the output field of the final node to read the full compliance report, discrepancy list, DHE SDA assessment, IBM Bob synthesis, and ROI metrics.
 
 **Live regulatory version-switch demo (hackathon highlight):**
 
-1. Open the **Case 2: Regulatory Comparison** flow
-2. In the **TradeFlow Sentinel** node, change the `DHE SDA Rule Version` dropdown from `PP_8_2025` to `PADG_16_2026` directly in the component panel
-3. Click **▶ Run** again — the violation count increases from 2 to 5 as the stricter PADG 16/2026 bank restriction and FX cap rules activate instantly, with no restart or code change required
+1. Go to the **📄 Trade Document Input** node.
+2. Change the `Case ID` dropdown to `CASE_2_DISCREPANT_COAL`.
+3. Change the `DHE SDA Rule Version` dropdown to `PP_8_2025`.
+4. Click **▶ Run** on the final node. The flow will report 2 violations.
+5. Now, change the `DHE SDA Rule Version` dropdown to `PADG_16_2026` (the active rule).
+6. Click **▶ Run** again — the violation count increases to 5 as the stricter PADG 16/2026 bank restriction and FX cap rules activate instantly, with no restart or code change required.
 
-**What each violation means in Case 2 (PADG 16/2026):**
+**What each violation means in Case 2 (under PADG 16/2026):**
 
 | # | Check | Finding |
 |---|---|---|
