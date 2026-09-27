@@ -1,0 +1,152 @@
+# TradeFlow Sentinel — Zero-Cost Local Docker Setup
+# Services:
+#   langflow   -> http://localhost:${HOST_PORT}       (Langflow UI + component runtime)
+#   sentinel   -> http://localhost:${SENTINEL_HOST_PORT}  (FastAPI compliance API)
+#
+# All configuration values are read from .env (copy from .env.example).
+# Default: USE_MOCK_LLM=true  (no IBM watsonx API key required, 0 Bobcoins consumed)
+
+services:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Langflow — flow orchestration UI and custom component runtime
+  # ─────────────────────────────────────────────────────────────────────────
+  langflow:
+    image: ${LANGFLOW_IMAGE}
+    container_name: tradeflow_langflow
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT}:${LANGFLOW_PORT}"
+    environment:
+      LANGFLOW_HOST: ${LANGFLOW_HOST}
+      LANGFLOW_PORT: ${LANGFLOW_PORT}
+      LANGFLOW_CONFIG_DIR: ${LANGFLOW_CONFIG_DIR}
+      LANGFLOW_DATABASE_URL: ${LANGFLOW_DATABASE_URL}
+      LANGFLOW_AUTO_LOGIN: ${LANGFLOW_AUTO_LOGIN}
+      LANGFLOW_SUPERUSER: ${LANGFLOW_SUPERUSER}
+      LANGFLOW_SUPERUSER_PASSWORD: ${LANGFLOW_SUPERUSER_PASSWORD}
+      LANGFLOW_SECRET_KEY: ${LANGFLOW_SECRET_KEY}
+      LANGFLOW_LOG_LEVEL: ${LANGFLOW_LOG_LEVEL}
+      LANGFLOW_COMPONENTS_PATH: ${LANGFLOW_COMPONENTS_PATH}
+      LANGFLOW_SSRF_PROTECTION_ENABLED: ${LANGFLOW_SSRF_PROTECTION_ENABLED}
+      LANGFLOW_SSRF_ALLOWED_HOSTS: ${LANGFLOW_SSRF_ALLOWED_HOSTS}
+      DO_NOT_TRACK: ${DO_NOT_TRACK}
+    deploy:
+      resources:
+        limits:
+          cpus: "${LANGFLOW_CPUS_LIMIT}"
+          memory: ${LANGFLOW_MEM_LIMIT}
+        reservations:
+          cpus: "${LANGFLOW_CPUS_RESERVATION}"
+          memory: ${LANGFLOW_MEM_RESERVATION}
+    volumes:
+      # langflow_component.py — the single .py file Langflow scans and registers.
+      - ./langflow_component.py:${LANGFLOW_COMPONENTS_PATH}/langflow_component.py:ro
+      # Engine goes into deactivated/ — Langflow's directory reader skips this
+      # subdirectory entirely, but Python can still import from it at runtime.
+      - ./_sentinel_engine.py:${LANGFLOW_COMPONENTS_PATH}/deactivated/_sentinel_engine.py:ro
+      # Data file outside LANGFLOW_COMPONENTS_PATH so it is never parsed as Python.
+      - ./synthetic_data_and_rules.json:/app/synthetic_data_and_rules.json:ro
+      # Persistent Langflow database (flows, sessions)
+      - langflow_data:${LANGFLOW_CONFIG_DIR}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:${LANGFLOW_PORT}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - sentinel_net
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Sentinel API — FastAPI deterministic compliance engine + IBM Bob synthesis
+  # ─────────────────────────────────────────────────────────────────────────
+  sentinel:
+    image: ${SENTINEL_IMAGE}
+    container_name: tradeflow_sentinel_api
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "${SENTINEL_HOST_PORT}:${SENTINEL_CONTAINER_PORT}"
+    environment:
+      USE_MOCK_LLM: ${USE_MOCK_LLM}
+      WATSONX_API_KEY: ${WATSONX_API_KEY}
+      WATSONX_PROJECT_ID: ${WATSONX_PROJECT_ID}
+      WATSONX_URL: ${WATSONX_URL}
+      WATSONX_MODEL: ${WATSONX_MODEL}
+      DATA_FILE: ${DATA_FILE}
+      PORT: ${SENTINEL_CONTAINER_PORT}
+      PORT_PROXIMITY_THRESHOLD_NM: ${PORT_PROXIMITY_THRESHOLD_NM}
+      PRICE_DEVIATION_MAX_DEFAULT_PCT: ${PRICE_DEVIATION_MAX_DEFAULT_PCT}
+    volumes:
+      - ./langflow_sentinel_engine.py:/app/langflow_sentinel_engine.py:ro
+      - ./synthetic_data_and_rules.json:/app/synthetic_data_and_rules.json:ro
+    command: >
+      sh -c "
+        pip install --quiet --no-cache-dir fastapi uvicorn pydantic &&
+        python langflow_sentinel_engine.py serve --port ${SENTINEL_CONTAINER_PORT}
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:${SENTINEL_CONTAINER_PORT}/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    depends_on:
+      langflow:
+        condition: service_healthy
+    networks:
+      - sentinel_net
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Volumes
+# ─────────────────────────────────────────────────────────────────────────────
+volumes:
+  langflow_data:
+    driver: local
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Networks
+# ─────────────────────────────────────────────────────────────────────────────
+networks:
+  sentinel_net:
+    driver: bridge
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Usage
+# ─────────────────────────────────────────────────────────────────────────────
+#
+#  1. Copy environment file:
+#       cp .env.example .env
+#     (Edit .env to set real credentials if USE_MOCK_LLM=false)
+#
+#  2. Start all services:
+#       docker-compose up --build
+#
+#  3. Run compliance check (Case 1 — Compliant CPO):
+#       curl -X POST http://localhost:8000/verify-trade-documents \
+#         -H "Content-Type: application/json" \
+#         -d '{"case_id": "CASE_1_COMPLIANT_CPO", "dhe_rule_version": "PADG_16_2026"}'
+#
+#  4. Run compliance check (Case 2 — Discrepant Coal):
+#       curl -X POST http://localhost:8000/verify-trade-documents \
+#         -H "Content-Type: application/json" \
+#         -d '{"case_id": "CASE_2_DISCREPANT_COAL", "dhe_rule_version": "PADG_16_2026"}'
+#
+#  5. Demo: switch DHE rule version at runtime (no restart):
+#       curl -X POST http://localhost:8000/verify-trade-documents \
+#         -H "Content-Type: application/json" \
+#         -d '{"case_id": "CASE_2_DISCREPANT_COAL", "dhe_rule_version": "PP_8_2025"}'
+#
+#  6. API docs (Swagger UI):
+#       http://localhost:8000/docs
+#
+#  7. Langflow UI:
+#       http://localhost:7860
+#       Login: $LANGFLOW_SUPERUSER / $LANGFLOW_SUPERUSER_PASSWORD
+#
+#  8. Stop all services:
+#       docker-compose down
+#
+#  9. Stop and remove volumes (clean slate):
+#       docker-compose down -v

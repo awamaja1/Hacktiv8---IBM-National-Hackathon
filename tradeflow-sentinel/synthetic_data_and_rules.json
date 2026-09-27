@@ -1,0 +1,267 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "description": "TradeFlow Sentinel — Synthetic ICC-compliant trade documents, versioned DHE SDA rules, AISHub snapshots, World Bank Pink Sheet benchmarks",
+    "sources": [
+      "ICC UCP 600 (Art. 5, 18, 20)",
+      "ISBP 745",
+      "PP No. 36/2023 (BASELINE_PRE_2025)",
+      "PP No. 8/2025 + PBI No. 3/2025 (PP_8_2025, effective 2025-03-01)",
+      "PADG No. 16/2026 (PADG_16_2026, effective 2026-06-01)",
+      "BPS Statistik Perdagangan Luar Negeri Indonesia Ekspor 2025",
+      "World Bank Pink Sheet (commodity benchmark prices)",
+      "AISHub open vessel coordinate snapshots"
+    ],
+    "active_rule_version": "PADG_16_2026"
+  },
+
+  "dhe_sda_versions": {
+    "BASELINE_PRE_2025": {
+      "legal_basis": "PP No. 36/2023",
+      "effective_date": "2023-07-01",
+      "sunset_date": "2025-02-28",
+      "fob_threshold_usd": 250000,
+      "retention_pct": 30,
+      "min_hold_months": 3,
+      "fx_conversion_to_idr_max_pct": 100,
+      "fx_conversion_note": "No cap — exporter may freely convert up to 100% of retained proceeds to IDR",
+      "eligible_placement": ["Bank Devisa (any licensed foreign-exchange bank)", "LPEI (Indonesia Eximbank)"],
+      "placement_note": "Any Bank Devisa or LPEI. No restriction to state-owned banks."
+    },
+    "PP_8_2025": {
+      "legal_basis": "PP No. 8/2025 + PBI No. 3/2025",
+      "effective_date": "2025-03-01",
+      "sunset_date": "2026-05-31",
+      "fob_threshold_usd": 250000,
+      "retention_pct": 100,
+      "min_hold_months": 12,
+      "fx_conversion_to_idr_max_pct": 100,
+      "fx_conversion_note": "Still no cap — exporter may convert up to 100% to IDR",
+      "eligible_placement": ["Bank Devisa (any licensed foreign-exchange bank)", "LPEI (Indonesia Eximbank)"],
+      "placement_note": "Retention raised to 100% and hold period extended to 12 months; placement eligibility unchanged."
+    },
+    "PADG_16_2026": {
+      "legal_basis": "PADG No. 16/2026",
+      "effective_date": "2026-06-01",
+      "sunset_date": null,
+      "fob_threshold_usd": 250000,
+      "retention_pct": 100,
+      "min_hold_months": 12,
+      "fx_conversion_to_idr_max_pct": 50,
+      "fx_conversion_note": "Hard cap at 50% of retained proceeds may be converted to IDR; remainder must stay in foreign currency",
+      "eligible_placement": ["Reksus DHE SDA at Bank BUMN/Himbara (BRI, BNI, Mandiri, BTN)"],
+      "placement_note": "LPEI and all private/non-Himbara banks removed. Only Reksus DHE SDA accounts at state-owned Himbara banks are eligible.",
+      "bank_categories": {
+        "HIMBARA": ["PT Bank Rakyat Indonesia (BRI)", "PT Bank Negara Indonesia (BNI)", "PT Bank Mandiri", "PT Bank Tabungan Negara (BTN)"],
+        "INELIGIBLE": ["LPEI", "Private foreign-exchange banks", "Foreign bank branches"]
+      }
+    }
+  },
+
+  "world_bank_pink_sheet_benchmarks": {
+    "_note": "Monthly commodity reference prices from World Bank Pink Sheet (open data). Used as benchmark for price deviation check.",
+    "reference_period": "2025-Q4",
+    "commodities": {
+      "CPO": {
+        "hs_code": "1511.10",
+        "description": "Crude Palm Oil",
+        "unit": "USD/MT",
+        "benchmark_price": 910,
+        "tolerance_pct": 5,
+        "source": "World Bank Pink Sheet Table 1a, Fats & Oils"
+      },
+      "COAL_THERMAL": {
+        "hs_code": "2701.12",
+        "description": "Thermal Coal (Australian benchmark, 6000 kcal)",
+        "unit": "USD/MT",
+        "benchmark_price": 72,
+        "tolerance_pct": 10,
+        "source": "World Bank Pink Sheet Table 1b, Energy"
+      }
+    }
+  },
+
+  "aishu_vessel_snapshots": {
+    "_note": "Synthetic AISHub coordinate snapshots at the declared Bill of Lading on-board date. Used for Haversine distance check vs declared loading port.",
+    "TANJUNG_PERAK_COORDS": { "lat": -7.2038, "lon": 112.7282, "port": "Tanjung Perak, Surabaya" },
+    "TANJUNG_PRIOK_COORDS": { "lat": -6.1044, "lon": 106.8853, "port": "Tanjung Priok, Jakarta" },
+    "vessels": {
+      "IMO9315460": {
+        "vessel_name": "MV BORNEO STAR",
+        "imo": "9315460",
+        "solas_checksum_valid": true,
+        "solas_checksum_value": 0,
+        "snapshot_date": "2026-07-10",
+        "lat": -7.2174,
+        "lon": 112.7401,
+        "distance_nm_from_tanjung_perak": 1.1,
+        "status": "AT PORT / LOADING"
+      },
+      "IMO9811000": {
+        "vessel_name": "MV KALIMANTAN BULK",
+        "imo": "9811000",
+        "solas_checksum_valid": true,
+        "solas_checksum_value": 0,
+        "snapshot_date": "2026-08-05",
+        "lat": -3.5892,
+        "lon": 109.3241,
+        "distance_nm_from_tanjung_priok": 209.97,
+        "status": "EN ROUTE / MID-SEA",
+        "_discrepancy_note": "Vessel was 209.97 NM from Tanjung Priok on declared BoL on-board date — physically impossible to have loaded at Tanjung Priok on that date. Triggers UCP 600 Art. 20 predated BoL discrepancy."
+      }
+    }
+  },
+
+  "lc_mt700_reference": {
+    "LC_REF_CPO_2026_001": {
+      "lc_number": "LC-2026-TFS-001",
+      "issuing_bank": "PT Bank Mandiri (Persero) Tbk",
+      "applicant": "ASIA PACIFIC TRADING SDN BHD",
+      "beneficiary": "PT SUMATRA AGRO INDUSTRIES",
+      "currency": "USD",
+      "amount": 1820000,
+      "tolerance_pct": 5,
+      "goods_description": "CRUDE PALM OIL (CPO), HS 1511.10",
+      "quantity_mt": 2000,
+      "unit_price_usd_mt": 910,
+      "incoterms": "FOB",
+      "port_of_loading": "Tanjung Perak, Surabaya",
+      "port_of_discharge": "Port Klang, Malaysia",
+      "latest_shipment_date": "2026-07-15",
+      "expiry_date": "2026-07-30",
+      "ucp_version": "UCP 600",
+      "partial_shipments": "NOT ALLOWED",
+      "transhipment": "NOT ALLOWED"
+    },
+    "LC_REF_COAL_2026_002": {
+      "lc_number": "LC-2026-TFS-002",
+      "issuing_bank": "PT Bank BNI (Persero) Tbk",
+      "applicant": "SHANGHAI ENERGY IMPORTS CO. LTD",
+      "beneficiary": "PT KALIMANTAN COAL EXPORT",
+      "currency": "USD",
+      "amount": 5250000,
+      "tolerance_pct": 5,
+      "goods_description": "THERMAL COAL, HS 2701.12",
+      "quantity_mt": 50000,
+      "unit_price_usd_mt": 105,
+      "incoterms": "FOB",
+      "port_of_loading": "Tanjung Priok, Jakarta",
+      "port_of_discharge": "Qingdao, China",
+      "latest_shipment_date": "2026-08-05",
+      "expiry_date": "2026-08-20",
+      "ucp_version": "UCP 600",
+      "partial_shipments": "NOT ALLOWED",
+      "transhipment": "NOT ALLOWED"
+    }
+  },
+
+  "cases": {
+    "CASE_1_COMPLIANT_CPO": {
+      "_description": "All checks pass. CPO export fully compliant with LC MT700, UCP 600, and PADG 16/2026 DHE SDA.",
+      "lc_reference": "LC_REF_CPO_2026_001",
+      "dhe_rule_version": "PADG_16_2026",
+      "commercial_invoice": {
+        "invoice_number": "INV-2026-SAI-0710",
+        "seller": "PT SUMATRA AGRO INDUSTRIES",
+        "buyer": "ASIA PACIFIC TRADING SDN BHD",
+        "issue_date": "2026-07-10",
+        "currency": "USD",
+        "hs_code": "1511.10",
+        "goods_description": "CRUDE PALM OIL (CPO)",
+        "quantity_mt": 2000,
+        "unit_price_usd_mt": 910,
+        "total_fob_usd": 1820000,
+        "incoterms": "FOB",
+        "port_of_loading": "Tanjung Perak, Surabaya"
+      },
+      "bill_of_lading": {
+        "bl_number": "BL-2026-BS-0710",
+        "vessel_name": "MV BORNEO STAR",
+        "imo_number": "9315460",
+        "shipper": "PT SUMATRA AGRO INDUSTRIES",
+        "consignee": "TO ORDER OF PT BANK MANDIRI",
+        "notify_party": "ASIA PACIFIC TRADING SDN BHD",
+        "port_of_loading": "Tanjung Perak, Surabaya",
+        "port_of_discharge": "Port Klang, Malaysia",
+        "on_board_date": "2026-07-10",
+        "goods_description": "CRUDE PALM OIL (CPO), HS 1511.10",
+        "quantity_mt": 2000,
+        "freight_terms": "FREIGHT PREPAID"
+      },
+      "dhe_sda_transaction": {
+        "fob_usd": 1820000,
+        "nominated_bank": "PT Bank Mandiri (Persero) Tbk",
+        "bank_category": "HIMBARA",
+        "placement_type": "Reksus DHE SDA",
+        "requested_fx_conversion_pct": 40,
+        "hold_period_months": 12
+      },
+      "expected_result": {
+        "overall_status": "COMPLIANT",
+        "ucp_art18_invoice_check": "PASS",
+        "ucp_art20_bol_check": "PASS",
+        "imo_solas_check": "PASS",
+        "aishu_proximity_check": "PASS",
+        "price_deviation_pct": 0.0,
+        "price_benchmark_check": "PASS",
+        "dhe_sda_retention_check": "PASS",
+        "dhe_sda_bank_check": "PASS",
+        "dhe_sda_fx_conversion_check": "PASS"
+      }
+    },
+
+    "CASE_2_DISCREPANT_COAL": {
+      "_description": "Double-dimension violation: (1) UCP 600 Art. 20 predated BoL — vessel physically impossible at loading port, (2) price deviation +45.8% above World Bank benchmark, (3) PADG 16/2026 bank restriction violation (non-Himbara), (4) PADG 16/2026 FX conversion cap violation (80% > 50% max).",
+      "lc_reference": "LC_REF_COAL_2026_002",
+      "dhe_rule_version": "PADG_16_2026",
+      "commercial_invoice": {
+        "invoice_number": "INV-2026-KCE-0805",
+        "seller": "PT KALIMANTAN COAL EXPORT",
+        "buyer": "SHANGHAI ENERGY IMPORTS CO. LTD",
+        "issue_date": "2026-08-05",
+        "currency": "USD",
+        "hs_code": "2701.12",
+        "goods_description": "THERMAL COAL",
+        "quantity_mt": 50000,
+        "unit_price_usd_mt": 105,
+        "total_fob_usd": 5250000,
+        "incoterms": "FOB",
+        "port_of_loading": "Tanjung Priok, Jakarta"
+      },
+      "bill_of_lading": {
+        "bl_number": "BL-2026-KB-0805",
+        "vessel_name": "MV KALIMANTAN BULK",
+        "imo_number": "9811000",
+        "shipper": "PT KALIMANTAN COAL EXPORT",
+        "consignee": "TO ORDER OF PT BANK BNI",
+        "notify_party": "SHANGHAI ENERGY IMPORTS CO. LTD",
+        "port_of_loading": "Tanjung Priok, Jakarta",
+        "port_of_discharge": "Qingdao, China",
+        "on_board_date": "2026-08-05",
+        "goods_description": "THERMAL COAL, HS 2701.12",
+        "quantity_mt": 50000,
+        "freight_terms": "FREIGHT PREPAID"
+      },
+      "dhe_sda_transaction": {
+        "fob_usd": 5250000,
+        "nominated_bank": "PT Bank CIMB Niaga Tbk",
+        "bank_category": "PRIVATE_BANK",
+        "placement_type": "Regular FX Account",
+        "requested_fx_conversion_pct": 80,
+        "hold_period_months": 12
+      },
+      "expected_result": {
+        "overall_status": "DISCREPANT",
+        "ucp_art18_invoice_check": "PASS",
+        "ucp_art20_bol_check": "FAIL — vessel IMO9811000 was 209.97 NM from Tanjung Priok on 2026-08-05; on-board date physically impossible",
+        "imo_solas_check": "PASS",
+        "aishu_proximity_check": "FAIL — 209.97 NM exceeds 10 NM port-proximity threshold",
+        "price_deviation_pct": 45.83,
+        "price_benchmark_check": "FAIL — invoice price $105/MT deviates +45.83% from World Bank benchmark $72/MT (tolerance ±10%)",
+        "dhe_sda_retention_check": "PASS",
+        "dhe_sda_bank_check": "FAIL — PT Bank CIMB Niaga is not a Himbara state-owned bank; PADG 16/2026 restricts placement to BRI/BNI/Mandiri/BTN only",
+        "dhe_sda_fx_conversion_check": "FAIL — requested 80% FX conversion exceeds PADG 16/2026 maximum 50% cap"
+      }
+    }
+  }
+}

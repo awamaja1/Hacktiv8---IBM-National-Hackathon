@@ -1,0 +1,334 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "TradeFlow Sentinel — Trade Finance Compliance API",
+    "description": "Adaptive Trade Finance & DHE SDA Compliance Automation. Exposes deterministic UCP 600 Art. 5/18/20 + ISBP 745 cross-checks and versioned Indonesia DHE SDA regulatory evaluations (BASELINE_PRE_2025 / PP_8_2025 / PADG_16_2026) for import into IBM watsonx Orchestrate as a custom skill.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "TradeFlow Sentinel — Hackathon Team",
+      "email": "tradeflow-sentinel@example.com"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local Docker development server"
+    },
+    {
+      "url": "https://sentinel.tradeflow.example.com",
+      "description": "Production server (placeholder)"
+    }
+  ],
+  "paths": {
+    "/verify-trade-documents": {
+      "post": {
+        "operationId": "verifyTradeDocuments",
+        "summary": "Verify trade documents for UCP 600 and DHE SDA compliance",
+        "description": "Runs a full end-to-end deterministic compliance pipeline on a specified trade case. Checks: (1) UCP 600 Art. 18 Commercial Invoice, (2) UCP 600 Art. 20 Bill of Lading including SOLAS IMO checksum and AISHub vessel proximity, (3) World Bank Pink Sheet unit price deviation, (4) versioned Indonesia DHE SDA rules. Returns structured findings and an IBM Bob compliance synthesis.",
+        "tags": ["Compliance"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              },
+              "examples": {
+                "case1_compliant_padg": {
+                  "summary": "Case 1 — Compliant CPO under PADG 16/2026",
+                  "value": {
+                    "case_id": "CASE_1_COMPLIANT_CPO",
+                    "dhe_rule_version": "PADG_16_2026"
+                  }
+                },
+                "case2_discrepant_coal": {
+                  "summary": "Case 2 — Discrepant Coal under PADG 16/2026",
+                  "value": {
+                    "case_id": "CASE_2_DISCREPANT_COAL",
+                    "dhe_rule_version": "PADG_16_2026"
+                  }
+                },
+                "case2_under_pp8_2025": {
+                  "summary": "Case 2 — Discrepant Coal re-evaluated under PP 8/2025",
+                  "value": {
+                    "case_id": "CASE_2_DISCREPANT_COAL",
+                    "dhe_rule_version": "PP_8_2025"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Compliance verification result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error — unknown case_id or dhe_rule_version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "healthCheck",
+        "summary": "API health check",
+        "description": "Returns service status and current LLM mode (mock or live).",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "VerifyRequest": {
+        "type": "object",
+        "required": ["case_id"],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "description": "Identifier of the trade case to evaluate.",
+            "enum": ["CASE_1_COMPLIANT_CPO", "CASE_2_DISCREPANT_COAL"],
+            "example": "CASE_1_COMPLIANT_CPO"
+          },
+          "dhe_rule_version": {
+            "type": "string",
+            "description": "DHE SDA regulatory version to apply. Omit to use the default active rule (PADG_16_2026). Use this to switch versions dynamically during the live demo.",
+            "enum": ["BASELINE_PRE_2025", "PP_8_2025", "PADG_16_2026"],
+            "example": "PADG_16_2026",
+            "nullable": true
+          }
+        }
+      },
+      "VerifyResponse": {
+        "type": "object",
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "description": "The evaluated case identifier.",
+            "example": "CASE_1_COMPLIANT_CPO"
+          },
+          "dhe_rule_version_applied": {
+            "type": "string",
+            "description": "DHE SDA rule version actually applied to this evaluation.",
+            "example": "PADG_16_2026"
+          },
+          "overall_status": {
+            "type": "string",
+            "description": "Aggregated compliance verdict.",
+            "enum": ["COMPLIANT", "DISCREPANT"],
+            "example": "COMPLIANT"
+          },
+          "discrepancy_count": {
+            "type": "integer",
+            "description": "Total number of compliance discrepancies found.",
+            "example": 0
+          },
+          "processing_time_ms": {
+            "type": "number",
+            "description": "End-to-end pipeline execution time in milliseconds.",
+            "example": 3.7
+          },
+          "guardrail_1_warnings": {
+            "type": "array",
+            "description": "Warnings from Guardrail 1 (PII masking).",
+            "items": { "type": "string" }
+          },
+          "guardrail_2_warnings": {
+            "type": "array",
+            "description": "Warnings from Guardrail 2 (output numerical faithfulness).",
+            "items": { "type": "string" }
+          },
+          "findings": {
+            "type": "object",
+            "description": "Structured per-check compliance findings.",
+            "properties": {
+              "overall_status": { "type": "string" },
+              "discrepancy_count": { "type": "integer" },
+              "discrepancies": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "checks": {
+                "type": "object",
+                "description": "Individual check results keyed by check name.",
+                "properties": {
+                  "ucp_art18_invoice": {
+                    "type": "object",
+                    "properties": {
+                      "rule": { "type": "string" },
+                      "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+                      "issues": { "type": "array", "items": { "type": "string" } }
+                    }
+                  },
+                  "ucp_art20_bol": {
+                    "type": "object",
+                    "properties": {
+                      "rule": { "type": "string" },
+                      "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+                      "issues": { "type": "array", "items": { "type": "string" } }
+                    }
+                  },
+                  "imo_solas": {
+                    "type": "object",
+                    "properties": {
+                      "rule": { "type": "string" },
+                      "imo": { "type": "string" },
+                      "computed_check_digit": { "type": "integer" },
+                      "status": { "type": "string", "enum": ["PASS", "FAIL"] }
+                    }
+                  },
+                  "aishu_proximity": {
+                    "type": "object",
+                    "properties": {
+                      "rule": { "type": "string" },
+                      "vessel": { "type": "string" },
+                      "distance_nm": { "type": "number" },
+                      "threshold_nm": { "type": "number" },
+                      "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+                      "finding": { "type": "string" }
+                    }
+                  },
+                  "price_deviation": {
+                    "type": "object",
+                    "properties": {
+                      "rule": { "type": "string" },
+                      "invoice_price_usd_mt": { "type": "number" },
+                      "benchmark_price_usd_mt": { "type": "number" },
+                      "deviation_pct": { "type": "number" },
+                      "tolerance_pct": { "type": "number" },
+                      "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+                      "finding": { "type": "string" }
+                    }
+                  },
+                  "dhe_sda": {
+                    "type": "object",
+                    "properties": {
+                      "rule": { "type": "string" },
+                      "legal_basis": { "type": "string" },
+                      "fob_usd": { "type": "number" },
+                      "retention_required_pct": { "type": "number" },
+                      "min_hold_months": { "type": "integer" },
+                      "fx_conversion_max_pct": { "type": "number" },
+                      "requested_fx_conversion_pct": { "type": "number" },
+                      "nominated_bank": { "type": "string" },
+                      "bank_category": { "type": "string" },
+                      "status": {
+                        "type": "string",
+                        "enum": ["PASS", "FAIL", "NOT_APPLICABLE"]
+                      },
+                      "issues": { "type": "array", "items": { "type": "string" } }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "synthesis": {
+            "type": "string",
+            "description": "IBM Bob compliance synthesis narrative (mock or live Granite model output)."
+          },
+          "roi_context": {
+            "type": "object",
+            "description": "ROI metrics comparing Sentinel processing time to manual review baseline.",
+            "properties": {
+              "baseline_review_time_s": {
+                "type": "integer",
+                "description": "Manual review baseline: 2,700 seconds (45 minutes).",
+                "example": 2700
+              },
+              "sentinel_time_ms": {
+                "type": "number",
+                "description": "Actual Sentinel pipeline execution time in ms.",
+                "example": 3.7
+              },
+              "sentinel_time_s": {
+                "type": "number",
+                "description": "Actual Sentinel pipeline execution time in seconds.",
+                "example": 0.004
+              },
+              "time_reduction_pct": {
+                "type": "number",
+                "description": "Percentage time reduction achieved vs manual baseline.",
+                "example": 99.98
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string",
+            "example": "Unknown case_id 'INVALID_CASE'. Available: ['CASE_1_COMPLIANT_CPO', 'CASE_2_DISCREPANT_COAL']"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "ok" },
+          "use_mock_llm": { "type": "boolean", "example": true },
+          "version": { "type": "string", "example": "1.0.0" }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Optional API key for production deployments"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Compliance",
+      "description": "Trade document compliance verification endpoints"
+    },
+    {
+      "name": "System",
+      "description": "Service health and diagnostics"
+    }
+  ]
+}
