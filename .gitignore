@@ -36,4 +36,7 @@ Thumbs.db
 **/compose.override.yaml
 
 #PDF Files
-Docs/PDF
+Docs/PDF/
+
+#Specific Files
+Docs/MARKDOWN/notes.md
