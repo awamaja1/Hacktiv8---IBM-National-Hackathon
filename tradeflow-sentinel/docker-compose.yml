@@ -40,11 +40,14 @@ services:
           cpus: "${LANGFLOW_CPUS_RESERVATION}"
           memory: ${LANGFLOW_MEM_RESERVATION}
     volumes:
-      # langflow_component.py — the single .py file Langflow scans and registers.
-      - ./langflow_component.py:${LANGFLOW_COMPONENTS_PATH}/langflow_component.py:ro
-      # Engine goes into deactivated/ — Langflow's directory reader skips this
-      # subdirectory entirely, but Python can still import from it at runtime.
-      - ./_sentinel_engine.py:${LANGFLOW_COMPONENTS_PATH}/deactivated/_sentinel_engine.py:ro
+      # 3-node Langflow flow: each file is a self-contained Component subclass.
+      # No cross-file Python imports — Langflow's code-cache sees each independently.
+      #   Node 1: Trade Document Input  (loads case data, Guardrail 1)
+      #   Node 2: Compliance Engine     (UCP 600, SOLAS, AISHub, DHE SDA checks)
+      #   Node 3: Compliance Report     (IBM Bob synthesis, Guardrail 2, ROI)
+      - ./component_input.py:${LANGFLOW_COMPONENTS_PATH}/component_input.py:ro
+      - ./component_engine.py:${LANGFLOW_COMPONENTS_PATH}/component_engine.py:ro
+      - ./component_output.py:${LANGFLOW_COMPONENTS_PATH}/component_output.py:ro
       # Data file outside LANGFLOW_COMPONENTS_PATH so it is never parsed as Python.
       - ./synthetic_data_and_rules.json:/app/synthetic_data_and_rules.json:ro
       # Persistent Langflow database (flows, sessions)
