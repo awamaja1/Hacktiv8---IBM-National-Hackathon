@@ -1,16 +1,18 @@
 {
   "mcpServers": {
-    "langflow": {
+    "lf-tradeflow_sentinel": {
       "command": "uvx",
       "args": [
-        "--from",
-        "lfx",
-        "lfx-mcp"
-      ],
-      "env": {
-        "LANGFLOW_SERVER_URL": "http://localhost:7860",
-        "LANGFLOW_API_KEY": "sk-AHrVpazh6DpFs7UbbQemrnn_ArBNdPgSYO-MKDDDmzI"
-      }
+        "--with",
+        "mcp<2.0.0",
+        "mcp-proxy",
+        "--transport",
+        "streamablehttp",
+        "--headers",
+        "x-api-key",
+        "sk-r-Qai_Yf155dSG84MKNYnoAwpRp0udhQRZKYIiDwpyg",
+        "http://localhost:7860/api/v1/mcp/project/6eac47e7-c966-43cc-8292-df349842a5ed/streamable"
+      ]
     }
   }
 }
