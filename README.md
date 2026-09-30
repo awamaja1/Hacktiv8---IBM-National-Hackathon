@@ -44,6 +44,8 @@ TradeFlow Sentinel is a deterministic-first, AI-augmented compliance automation 
 
 **Core Differentiator:** The deterministic engine is the source of truth. The LLM synthesises — it never invents numbers. Guardrail 2 enforces this numerically on every output.
 
+**Adaptive Regulatory Architecture:** The versioned rule engine is regulation-agnostic by design. Indonesia's DHE SDA (export proceeds retention) is the Stage 1 showcase, but the same version-switching mechanism — rule parameters loaded from a JSON config, evaluated at runtime, switchable without restart or code change — applies to **any** regulation that evolves over time: OECD BEPS transfer pricing thresholds, EU CBAM carbon tariffs, FATF AML screening rules, or country-specific customs valuation regimes. If DHE SDA were repealed tomorrow, the engine continues to serve every other compliance dimension already built in (UCP 600 Art. 18/20, SOLAS IMO, price benchmarking), and a new regulatory module is added by extending the JSON config — zero engine code changes required.
+
 ---
 
 ## 3. Architecture
@@ -97,8 +99,8 @@ TradeFlow Sentinel is a deterministic-first, AI-augmented compliance automation 
 
 | Metric | Manual Process | TradeFlow Sentinel | Delta |
 |---|---|---|---|
-| Review time per transaction set | 45 min (2,700 s) | < 5 s | **> 99% reduction** |
-| Exact measured reduction | — | 2,700 s → ~0.004 s engine | **99.8% time efficiency gain** |
+| Review time per transaction set | 45 min (2,700 s) | < 5 s | **> 99.9% reduction** |
+| Exact measured reduction | — | 2,700 s → ~0.004 s engine | **99.9998% time efficiency gain** |
 | DHE SDA rule version switches | Manual policy lookup (hours) | Runtime parameter (`dhe_rule_version`) | Instant |
 | Predated BoL detection | Manual AIS cross-check (15–20 min) | Automated Haversine + AISHub snapshot | < 1 s |
 | Price manipulation detection | Analyst judgement (subjective) | World Bank Pink Sheet deviation ± tolerance | Deterministic |
@@ -107,7 +109,7 @@ TradeFlow Sentinel is a deterministic-first, AI-augmented compliance automation 
 ```
 Baseline:          2,700 seconds per transaction set
 Sentinel engine:   ~0.004 seconds (4 ms measured)
-Reduction:         (2,700 - 0.004) / 2,700 × 100 = 99.9998% ≈ 99.8% (conservative claim)
+Reduction:         (2,700 - 0.004) / 2,700 × 100 = 99.9998%
 ```
 
 ---
@@ -125,7 +127,7 @@ Reduction:         (2,700 - 0.004) / 2,700 × 100 = 99.9998% ≈ 99.8% (conserva
 
 **Synthetic Test Cases:**
 - `CASE_1_COMPLIANT_CPO` — HS 1511.10, FOB USD 1,820,000, IMO9315460, Tanjung Perak, $910/MT CPO, Himbara Reksus, 40% FX → **COMPLIANT**
-- `CASE_2_DISCREPANT_COAL` — HS 2701.12, FOB USD 5,250,000, IMO9811000, 353.4 NM from Tanjung Priok (predated BoL), $105/MT vs $72/MT benchmark (+45.8%), non-Himbara bank, 80% FX → **DISCREPANT** (4 simultaneous violations)
+- `CASE_2_DISCREPANT_COAL` — HS 2701.12, FOB USD 5,250,000, IMO9811000, 209.97 NM from Tanjung Priok (predated BoL), $105/MT vs $72/MT benchmark (+45.8%), non-Himbara bank, 80% FX, Regular FX Account → **DISCREPANT** (5 simultaneous violations)
 
 ---
 
@@ -185,7 +187,7 @@ curl -X POST http://localhost:8000/verify-trade-documents \
   -d '{"case_id": "CASE_2_DISCREPANT_COAL", "dhe_rule_version": "PADG_16_2026"}'
 ```
 
-Expected: `"overall_status": "DISCREPANT"`, `"discrepancy_count": 4`
+Expected: `"overall_status": "DISCREPANT"`, `"discrepancy_count": 5`
 
 ### Demo: DHE SDA Version Switch (Live Hackathon Demo)
 ```bash
@@ -211,46 +213,53 @@ WATSONX_PROJECT_ID=your_project_id
 3. Set Server URL to your Sentinel API endpoint
 4. Skill `verifyTradeDocuments` is now available to all Orchestrate agents
 
-### Run in Langflow UI (Visual Canvas Demo)
+### Run in Langflow UI (Visual Canvas Demo & MCP-Ready)
 
-To see the full 3-node visual pipeline in action, you can import the pre-built flow configuration:
+To see the full MCP-ready API orchestration pipeline in action, you can import the pre-built flow configuration:
 
 1. Open **http://localhost:7860** (no login required for local mock mode)
 2. On the main dashboard, click **Import** 
 3. Select and upload the `Adaptive Trade Finance & DHE SDA Compliance Flow.json` file included in this repository.
-4. Click on the imported flow to open it. You will see the 3-node architecture:
+4. Click on the imported flow to open it. You will see the complete orchestration architecture:
+   ```text
+   [Chat Input] ──► [Regex Extractors] ──► [API Body Builder] ──► [API Request]
+                                                                        │
+   [Chat Output] ◄── [Report Formatter] ◄── [Sentinel Checker] ◄────────┘
    ```
-   📄 Trade Document Input  ──►  ⚖️ Compliance Engine  ──►  📊 Compliance Report
+   ![Langflow Architecture](Docs/IMG/Screenshot%202026-09-30%20152526.png)
+5. To execute the compliance check, click the **Playground** button at the bottom right of the canvas.
+6. Type the case parameters in the chat input. For example, to run Test Case 1:
+   ```text
+   CASE_1_COMPLIANT_CPO PADG_16_2026
    ```
-   ![Langflow Architecture](Docs/IMG/Screenshot%202026-09-27%20201719.png)
-5. To execute the compliance check, click **▶ Run** on the final node (**📊 Compliance Report**).
-6. Click the output field of the final node to read the full compliance report, discrepancy list, DHE SDA assessment, IBM Bob synthesis, and ROI metrics.
+7. The flow will parse the input, orchestrate the API call, and stream the formatted markdown report back to the chat interface.
 
 **Live regulatory version-switch demo (hackathon highlight):**
 
-1. Go to the **📄 Trade Document Input** node.
-2. Change the `Case ID` dropdown to `CASE_2_DISCREPANT_COAL`.
-3. Change the `DHE SDA Rule Version` dropdown to `PP_8_2025`.
-4. Click **▶ Run** on the final node. The flow will report 2 violations.
-5. Now, change the `DHE SDA Rule Version` dropdown to `PADG_16_2026` (the active rule).
-6. Click **▶ Run** again — the violation count increases to 5 as the stricter PADG 16/2026 bank restriction and FX cap rules activate instantly, with no restart or code change required.
+1. In the Playground, test how the engine reacts to different regulatory regimes on the exact same document set.
+2. Type and send: `CASE_2_DISCREPANT_COAL PP_8_2025`
+   *(Expected: 2 violations—predated BoL + price deviation).*
+3. Now type and send: `CASE_2_DISCREPANT_COAL PADG_16_2026`
+   *(Expected: Violation count instantly jumps to 5. The stricter PADG 16/2026 bank restriction and FX cap rules activate immediately, with no restart or code change required).*
 
 **What each violation means in Case 2 (under PADG 16/2026):**
 
-| # | Check | Finding |
+| # | Check | Discrepancy |
 |---|---|---|
-| 1 | UCP 600 Art. 20 | Predated BoL — vessel 209.97 NM from Tanjung Priok on declared on-board date |
-| 2 | AISHub proximity | Vessel physically impossible at loading port (> 10 NM threshold) |
-| 3 | World Bank price | Invoice $105/MT deviates +45.83% from benchmark $72/MT (tolerance ±10%) |
+| 1 | UCP 600 Art. 20 + AISHub | Predated BoL — vessel MV KALIMANTAN BULK (IMO 9811000) was 209.97 NM from Tanjung Priok on declared on-board date |
+| 2 | World Bank Pink Sheet | Price deviation +45.83% exceeds ±10% tolerance (invoice $105/MT vs benchmark $72/MT) |
+| 3 | DHE SDA FX cap | Requested 80% FX conversion exceeds PADG 16/2026 maximum 50% |
 | 4 | DHE SDA bank | PT Bank CIMB Niaga is not Himbara; PADG 16/2026 mandates BRI/BNI/Mandiri/BTN only |
-| 5 | DHE SDA FX cap | Requested 80% FX conversion exceeds PADG 16/2026 maximum 50% |
+| 5 | DHE SDA placement | Regular FX Account is not a Reksus DHE SDA account as required by PADG 16/2026 |
+
+> **Note:** The API returns 6 checks (4 FAIL, 2 PASS) but 5 discrepancies. This is because `ucp_art20_bol` and `aishu_proximity` are two checks evaluating the same event (vessel not at port) — they share one discrepancy. Meanwhile, `dhe_sda` is one check with 3 individual issues. Total: 1 + 1 + 3 = 5 discrepancies from 4 FAIL checks.
 
 ### CLI (no Docker)
 ```bash
 pip install fastapi uvicorn ibm-watsonx-ai
-python _sentinel_engine.py run CASE_1_COMPLIANT_CPO
-python _sentinel_engine.py run CASE_2_DISCREPANT_COAL
-python _sentinel_engine.py serve --port 8000
+python langflow_sentinel_engine.py run CASE_1_COMPLIANT_CPO
+python langflow_sentinel_engine.py run CASE_2_DISCREPANT_COAL
+python langflow_sentinel_engine.py serve --port 8000
 ```
 
 ---
@@ -285,16 +294,17 @@ python _sentinel_engine.py serve --port 8000
 
 ### TAM — Total Addressable Market
 **Definition:** All LC-based trade finance documentary presentations in Indonesia annually.
-- Indonesia's trade finance documentary credit volume: approximately **USD 18–22 billion** per year (estimated 8–10% of total export value as LC-financed, consistent with Asian Development Bank trade finance gap data for Southeast Asia).
+- Indonesia's trade finance documentary credit volume: approximately **USD 21–26 billion** per year (estimated 8–10% of total export value of USD 264B as LC-financed, consistent with Asian Development Bank trade finance gap data for Southeast Asia).
 - Average transaction value: ~USD 500,000 per LC.
-- Estimated LC presentations: **~40,000–44,000 per year**.
-- At USD 2.50 per audit: **TAM ≈ USD 100,000–110,000 per year** (pay-per-audit only) | **TAM ≈ USD 22M–26M per year** (full SaaS penetration of all presentations).
+- Estimated LC presentations: **~42,000–52,000 per year** (= USD 21–26B ÷ USD 500K).
+- At USD 2.50 per audit (pay-per-audit): **TAM ≈ USD 105,000–130,000 per year**.
+- At blended SaaS rate (~USD 500/mo effective per active account, weighted across Professional & Enterprise tiers): **TAM ≈ USD 22M–26M per year** (full SaaS penetration across all exporter accounts processing ≥1 LC/month).
 
 ### SAM — Serviceable Addressable Market
 **Definition:** LC presentations involving commodity exports (CPO, coal, nickel, mineral) where DHE SDA compliance is mandatory (FOB ≥ USD 250,000).
 - BPS 2025: Top-5 commodity export categories account for ~62% of total non-oil & gas export value.
-- Estimated DHE SDA-subject LC presentations: **~25,000–27,000 per year**.
-- **SAM ≈ USD 13.5M–15M per year** (SaaS pricing).
+- Estimated DHE SDA-subject LC presentations: **~26,000–32,000 per year** (~62% of TAM presentations).
+- At blended SaaS rate (~USD 500/mo effective per active account): **SAM ≈ USD 13M–16M per year**.
 
 ### SOM — Serviceable Obtainable Market (3-Year Target)
 **Definition:** Realistic market capture given direct sales to mid-to-large exporters and two bank OEM partnerships within 36 months.
@@ -360,6 +370,6 @@ MIT License. Synthetic data only — no real customer PII or actual trade docume
 
 ---
 
-*TradeFlow Sentinel — Built for the Hacktiv8 × IBM National Hackathon 2025.*
+*TradeFlow Sentinel — Built for the Hacktiv8 × IBM National Hackathon 2026.*
 *Financial Theme (Primary) · Productivity & Smart Business (Secondary).*
 *IBM watsonx Orchestrate + Langflow + IBM Bob.*
