@@ -226,7 +226,7 @@ To see the full MCP-ready API orchestration pipeline in action, you can import t
                                                                         │
    [Chat Output] ◄── [Report Formatter] ◄── [Sentinel Checker] ◄────────┘
    ```
-   ![Langflow Architecture](Docs/IMG/Screenshot%202026-09-30%20152526.png)
+   ![Langflow Architecture](Docs/IMG/Screenshot%202026-10-01%20211545.png)
 5. To execute the compliance check, click the **Playground** button at the bottom right of the canvas.
 6. Type the case parameters in the chat input. For example, to run Test Case 1:
    ```text
@@ -253,6 +253,9 @@ To see the full MCP-ready API orchestration pipeline in action, you can import t
 | 5 | DHE SDA placement | Regular FX Account is not a Reksus DHE SDA account as required by PADG 16/2026 |
 
 > **Note:** The API returns 6 checks (4 FAIL, 2 PASS) but 5 discrepancies. This is because `ucp_art20_bol` and `aishu_proximity` are two checks evaluating the same event (vessel not at port) — they share one discrepancy. Meanwhile, `dhe_sda` is one check with 3 individual issues. Total: 1 + 1 + 3 = 5 discrepancies from 4 FAIL checks.
+
+### Sample Output Report
+You can view a complete generated sample report here: [test_case-result.md](Docs/MARKDOWN/test_case-result.md)
 
 ### CLI (no Docker)
 ```bash

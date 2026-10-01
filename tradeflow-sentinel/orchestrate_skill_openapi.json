@@ -28,13 +28,36 @@
         "operationId": "verifyTradeDocuments",
         "summary": "Verify trade documents for UCP 600 and DHE SDA compliance",
         "description": "Runs a full end-to-end deterministic compliance pipeline on a specified trade case. Checks: (1) UCP 600 Art. 18 Commercial Invoice, (2) UCP 600 Art. 20 Bill of Lading including SOLAS IMO checksum and AISHub vessel proximity, (3) World Bank Pink Sheet unit price deviation, (4) versioned Indonesia DHE SDA rules. Returns structured findings and an IBM Bob compliance synthesis.",
-        "tags": ["Compliance"],
+        "tags": [
+          "Compliance"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VerifyRequest"
+                "$ref": "#/components/schemas/VerifyRequest",
+                "type": "object",
+                "properties": {
+                  "dhe_rule_version": {
+                    "type": "string",
+                    "enum": [
+                      "BASELINE_PRE_2025",
+                      "PP_8_2025",
+                      "PADG_16_2026"
+                    ]
+                  },
+                  "case_id": {
+                    "type": "string"
+                  },
+                  "document_data": {
+                    "type": "object",
+                    "description": "JSON payload of OCR-extracted LC MT700, Bill of Lading, and Commercial Invoice data"
+                  }
+                },
+                "required": [
+                  "dhe_rule_version"
+                ]
               },
               "examples": {
                 "case1_compliant_padg": {
@@ -56,6 +79,32 @@
                   "value": {
                     "case_id": "CASE_2_DISCREPANT_COAL",
                     "dhe_rule_version": "PP_8_2025"
+                  }
+                },
+                "case2_live_demo_payload": {
+                  "summary": "Case 2 — Live Demo Edit with Full Document Payload",
+                  "value": {
+                    "dhe_rule_version": "PADG_16_2026",
+                    "document_data": {
+                      "lc_mt700_reference": {
+                        "hs_code_expected": "2701.12",
+                        "latest_shipment_date": "2026-09-30"
+                      },
+                      "commercial_invoice": {
+                        "hs_code_actual": "2701.12",
+                        "fob_value_usd": 5250000,
+                        "unit_price_usd": 105
+                      },
+                      "bill_of_lading": {
+                        "vessel_name": "MV KALIMANTAN BULK",
+                        "imo_number": "9811000",
+                        "on_board_date": "2026-09-28"
+                      },
+                      "exporter_instructions": {
+                        "nominated_bank": "PT Bank CIMB Niaga",
+                        "requested_fx_conversion_percent": 80
+                      }
+                    }
                   }
                 }
               }
@@ -101,7 +150,9 @@
         "operationId": "healthCheck",
         "summary": "API health check",
         "description": "Returns service status and current LLM mode (mock or live).",
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "responses": {
           "200": {
             "description": "Service is healthy",
@@ -121,19 +172,33 @@
     "schemas": {
       "VerifyRequest": {
         "type": "object",
-        "required": ["case_id"],
+        "required": [
+          "dhe_rule_version"
+        ],
         "properties": {
           "case_id": {
             "type": "string",
-            "description": "Identifier of the trade case to evaluate.",
-            "enum": ["CASE_1_COMPLIANT_CPO", "CASE_2_DISCREPANT_COAL"],
-            "example": "CASE_1_COMPLIANT_CPO"
+            "description": "Identifier of the trade case to evaluate (Regression Mode).",
+            "enum": [
+              "CASE_1_COMPLIANT_CPO",
+              "CASE_2_DISCREPANT_COAL"
+            ],
+            "example": "CASE_1_COMPLIANT_CPO",
+            "nullable": true
           },
           "dhe_rule_version": {
             "type": "string",
-            "description": "DHE SDA regulatory version to apply. Omit to use the default active rule (PADG_16_2026). Use this to switch versions dynamically during the live demo.",
-            "enum": ["BASELINE_PRE_2025", "PP_8_2025", "PADG_16_2026"],
-            "example": "PADG_16_2026",
+            "description": "DHE SDA regulatory version to apply.",
+            "enum": [
+              "BASELINE_PRE_2025",
+              "PP_8_2025",
+              "PADG_16_2026"
+            ],
+            "example": "PADG_16_2026"
+          },
+          "document_data": {
+            "type": "object",
+            "description": "Raw JSON payload for Live Demo Mode containing LC, Invoice, BoL, and Exporter Instructions.",
             "nullable": true
           }
         }
@@ -154,7 +219,10 @@
           "overall_status": {
             "type": "string",
             "description": "Aggregated compliance verdict.",
-            "enum": ["COMPLIANT", "DISCREPANT"],
+            "enum": [
+              "COMPLIANT",
+              "DISCREPANT"
+            ],
             "example": "COMPLIANT"
           },
           "discrepancy_count": {
@@ -170,22 +238,32 @@
           "guardrail_1_warnings": {
             "type": "array",
             "description": "Warnings from Guardrail 1 (PII masking).",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "guardrail_2_warnings": {
             "type": "array",
             "description": "Warnings from Guardrail 2 (output numerical faithfulness).",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "findings": {
             "type": "object",
             "description": "Structured per-check compliance findings.",
             "properties": {
-              "overall_status": { "type": "string" },
-              "discrepancy_count": { "type": "integer" },
+              "overall_status": {
+                "type": "string"
+              },
+              "discrepancy_count": {
+                "type": "integer"
+              },
               "discrepancies": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": {
+                  "type": "string"
+                }
               },
               "checks": {
                 "type": "object",
@@ -194,68 +272,167 @@
                   "ucp_art18_invoice": {
                     "type": "object",
                     "properties": {
-                      "rule": { "type": "string" },
-                      "status": { "type": "string", "enum": ["PASS", "FAIL"] },
-                      "issues": { "type": "array", "items": { "type": "string" } }
+                      "rule": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "PASS",
+                          "FAIL"
+                        ]
+                      },
+                      "issues": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
                     }
                   },
                   "ucp_art20_bol": {
                     "type": "object",
                     "properties": {
-                      "rule": { "type": "string" },
-                      "status": { "type": "string", "enum": ["PASS", "FAIL"] },
-                      "issues": { "type": "array", "items": { "type": "string" } }
+                      "rule": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "PASS",
+                          "FAIL"
+                        ]
+                      },
+                      "issues": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
                     }
                   },
                   "imo_solas": {
                     "type": "object",
                     "properties": {
-                      "rule": { "type": "string" },
-                      "imo": { "type": "string" },
-                      "computed_check_digit": { "type": "integer" },
-                      "status": { "type": "string", "enum": ["PASS", "FAIL"] }
+                      "rule": {
+                        "type": "string"
+                      },
+                      "imo": {
+                        "type": "string"
+                      },
+                      "computed_check_digit": {
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "PASS",
+                          "FAIL"
+                        ]
+                      }
                     }
                   },
                   "aishu_proximity": {
                     "type": "object",
                     "properties": {
-                      "rule": { "type": "string" },
-                      "vessel": { "type": "string" },
-                      "distance_nm": { "type": "number" },
-                      "threshold_nm": { "type": "number" },
-                      "status": { "type": "string", "enum": ["PASS", "FAIL"] },
-                      "finding": { "type": "string" }
+                      "rule": {
+                        "type": "string"
+                      },
+                      "vessel": {
+                        "type": "string"
+                      },
+                      "distance_nm": {
+                        "type": "number"
+                      },
+                      "threshold_nm": {
+                        "type": "number"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "PASS",
+                          "FAIL"
+                        ]
+                      },
+                      "finding": {
+                        "type": "string"
+                      }
                     }
                   },
                   "price_deviation": {
                     "type": "object",
                     "properties": {
-                      "rule": { "type": "string" },
-                      "invoice_price_usd_mt": { "type": "number" },
-                      "benchmark_price_usd_mt": { "type": "number" },
-                      "deviation_pct": { "type": "number" },
-                      "tolerance_pct": { "type": "number" },
-                      "status": { "type": "string", "enum": ["PASS", "FAIL"] },
-                      "finding": { "type": "string" }
+                      "rule": {
+                        "type": "string"
+                      },
+                      "invoice_price_usd_mt": {
+                        "type": "number"
+                      },
+                      "benchmark_price_usd_mt": {
+                        "type": "number"
+                      },
+                      "deviation_pct": {
+                        "type": "number"
+                      },
+                      "tolerance_pct": {
+                        "type": "number"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "PASS",
+                          "FAIL"
+                        ]
+                      },
+                      "finding": {
+                        "type": "string"
+                      }
                     }
                   },
                   "dhe_sda": {
                     "type": "object",
                     "properties": {
-                      "rule": { "type": "string" },
-                      "legal_basis": { "type": "string" },
-                      "fob_usd": { "type": "number" },
-                      "retention_required_pct": { "type": "number" },
-                      "min_hold_months": { "type": "integer" },
-                      "fx_conversion_max_pct": { "type": "number" },
-                      "requested_fx_conversion_pct": { "type": "number" },
-                      "nominated_bank": { "type": "string" },
-                      "bank_category": { "type": "string" },
+                      "rule": {
+                        "type": "string"
+                      },
+                      "legal_basis": {
+                        "type": "string"
+                      },
+                      "fob_usd": {
+                        "type": "number"
+                      },
+                      "retention_required_pct": {
+                        "type": "number"
+                      },
+                      "min_hold_months": {
+                        "type": "integer"
+                      },
+                      "fx_conversion_max_pct": {
+                        "type": "number"
+                      },
+                      "requested_fx_conversion_pct": {
+                        "type": "number"
+                      },
+                      "nominated_bank": {
+                        "type": "string"
+                      },
+                      "bank_category": {
+                        "type": "string"
+                      },
                       "status": {
                         "type": "string",
-                        "enum": ["PASS", "FAIL", "NOT_APPLICABLE"]
+                        "enum": [
+                          "PASS",
+                          "FAIL",
+                          "NOT_APPLICABLE"
+                        ]
                       },
-                      "issues": { "type": "array", "items": { "type": "string" } }
+                      "issues": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -306,9 +483,18 @@
       "HealthResponse": {
         "type": "object",
         "properties": {
-          "status": { "type": "string", "example": "ok" },
-          "use_mock_llm": { "type": "boolean", "example": true },
-          "version": { "type": "string", "example": "1.0.0" }
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "use_mock_llm": {
+            "type": "boolean",
+            "example": true
+          },
+          "version": {
+            "type": "string",
+            "example": "1.0.0"
+          }
         }
       }
     },

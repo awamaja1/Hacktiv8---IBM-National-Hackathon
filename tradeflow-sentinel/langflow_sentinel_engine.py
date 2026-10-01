@@ -29,7 +29,7 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 # ---------------------------------------------------------------------------
 # Optional: FastAPI — imported lazily so the module works without it.
@@ -531,11 +531,14 @@ def guardrail_output(synthesis: str, findings: dict) -> tuple[str, list[str]]:
 # MAIN PIPELINE ORCHESTRATOR
 # ===========================================================================
 
-def run_pipeline(case_id: str, dhe_rule_version: str | None = None) -> dict:
+def run_pipeline(case_id: str | None = None, dhe_rule_version: str | None = None, document_data: dict | None = None) -> dict:
     """
-    Full end-to-end pipeline for a given case_id.
+    Full end-to-end pipeline for a given case_id or live document_data payload.
     Returns a structured result dict ready for JSON serialisation.
     """
+    if not case_id and not document_data:
+        raise ValueError("Either case_id or document_data must be provided.")
+
     t_start = time.perf_counter()
 
     data = _load_data()
@@ -549,10 +552,15 @@ def run_pipeline(case_id: str, dhe_rule_version: str | None = None) -> dict:
         "TANJUNG_PRIOK": data["aishu_vessel_snapshots"]["TANJUNG_PRIOK_COORDS"],
     }
 
-    if case_id not in cases:
-        raise ValueError(f"Unknown case_id '{case_id}'. Available: {list(cases.keys())}")
-
-    case = cases[case_id]
+    if document_data:
+        case = document_data
+        case_id = case_id or "LIVE_PAYLOAD"
+        if "exporter_instructions" in case and "dhe_sda_transaction" not in case:
+            case["dhe_sda_transaction"] = case["exporter_instructions"]
+    else:
+        if case_id not in cases:
+            raise ValueError(f"Unknown case_id '{case_id}'. Available: {list(cases.keys())}")
+        case = cases[case_id]
 
     # Allow runtime override of DHE rule version
     if dhe_rule_version:
@@ -566,16 +574,19 @@ def run_pipeline(case_id: str, dhe_rule_version: str | None = None) -> dict:
     # Guardrail 1 — sanitise free-text fields
     g1_all_warnings: list[str] = []
     for field in ["goods_description"]:
-        raw = case["commercial_invoice"].get(field, "")
+        raw = case.get("commercial_invoice", {}).get(field, "")
         _, w = guardrail_input(raw)
         g1_all_warnings.extend(w)
-        raw_bol = case["bill_of_lading"].get(field, "")
+        raw_bol = case.get("bill_of_lading", {}).get(field, "")
         _, w2 = guardrail_input(raw_bol)
         g1_all_warnings.extend(w2)
 
     # Resolve LC reference
-    lc_key = case["lc_reference"]
-    lc_ref = lc_refs[lc_key]
+    if "lc_mt700_reference" in case and isinstance(case["lc_mt700_reference"], dict):
+        lc_ref = case["lc_mt700_reference"]
+    else:
+        lc_key = case["lc_reference"]
+        lc_ref = lc_refs[lc_key]
 
     # Resolve vessel
     imo_key = f"IMO{case['bill_of_lading']['imo_number']}"
@@ -615,6 +626,8 @@ def run_pipeline(case_id: str, dhe_rule_version: str | None = None) -> dict:
     synthesis, g2_warnings = guardrail_output(synthesis, findings)
 
     t_elapsed_ms = round((time.perf_counter() - t_start) * 1000, 1)
+    # Hitung persentase mentahnya tanpa dibulatkan terlebih dahulu
+    raw_reduction_pct = (1 - (t_elapsed_ms / 1000) / 2700) * 100
 
     return {
         "case_id": case_id,
@@ -630,9 +643,7 @@ def run_pipeline(case_id: str, dhe_rule_version: str | None = None) -> dict:
             "baseline_review_time_s": 2700,
             "sentinel_time_ms": t_elapsed_ms,
             "sentinel_time_s": round(t_elapsed_ms / 1000, 3),
-            "time_reduction_pct": round(
-                (1 - (t_elapsed_ms / 1000) / 2700) * 100, 2
-            ),
+            "time_reduction_pct": raw_reduction_pct,
         },
     }
 
@@ -652,15 +663,19 @@ if _FASTAPI_AVAILABLE:
     )
 
     class VerifyRequest(BaseModel):
-        case_id: str = "CASE_1_COMPLIANT_CPO"
-        dhe_rule_version: str | None = None
+        dhe_rule_version: str
+        case_id: Optional[str] = None
+        document_data: Optional[dict[str, Any]] = None
 
     @app.post("/verify-trade-documents", summary="Verify trade documents for compliance")
     async def verify_trade_documents(body: VerifyRequest):
         try:
+            if not body.case_id and not body.document_data:
+                raise ValueError("Either case_id or document_data must be provided.")
             result = run_pipeline(
                 case_id=body.case_id,
                 dhe_rule_version=body.dhe_rule_version,
+                document_data=body.document_data
             )
             return JSONResponse(content=result)
         except ValueError as exc:
@@ -705,14 +720,22 @@ if __name__ == "__main__":
         if getattr(args, "json", False):
             print(json.dumps(result, indent=2))
         else:
+            reduction_val = result['roi_context']['time_reduction_pct']
+            proc_time = result['processing_time_ms']
+
+            # Lakukan formatting string HANYA saat ingin dicetak menjadi teks
+            if reduction_val >= 99.9 and proc_time > 0:
+                display_reduction = ">99.9"
+            else:
+                display_reduction = f"{round(reduction_val, 1)}"
             print(f"\n{'='*60}")
             print(f"  TradeFlow Sentinel — {result['case_id']}")
             print(f"{'='*60}")
             print(f"  Status          : {result['overall_status']}")
             print(f"  Discrepancies   : {result['discrepancy_count']}")
             print(f"  DHE SDA Rule    : {result['dhe_rule_version_applied']}")
-            print(f"  Processing Time : {result['processing_time_ms']} ms")
-            print(f"  Time Reduction  : {result['roi_context']['time_reduction_pct']}%")
+            print(f"  Processing Time : {proc_time} ms")
+            print(f"  Time Reduction (percobaan)  : {display_reduction}%")
             print(f"\n--- Synthesis ---\n{result['synthesis']}")
             if result["findings"]["discrepancies"]:
                 print("\n--- Discrepancies ---")

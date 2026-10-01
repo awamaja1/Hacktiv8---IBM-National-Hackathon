@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "lf-tradeflow_sentinel": {
+      "lf-starter_project": {
       "command": "uvx",
       "args": [
         "--with",
@@ -10,8 +10,8 @@
         "streamablehttp",
         "--headers",
         "x-api-key",
-        "sk-r-Qai_Yf155dSG84MKNYnoAwpRp0udhQRZKYIiDwpyg",
-        "http://localhost:7860/api/v1/mcp/project/6eac47e7-c966-43cc-8292-df349842a5ed/streamable"
+        "sk-dcikzDhH4CR-_qA1GST7OKDtlBJCMzHgVzMQPpNPsuA",
+        "http://localhost:7860/api/v1/mcp/project/990f7c71-46f7-4843-8c6f-736f9e7a754e/streamable"
       ]
     }
   }
