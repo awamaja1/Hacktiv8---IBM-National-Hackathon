@@ -389,7 +389,7 @@ Bob, saya baru saja menerima ekstraksi data OCR dokumen pengapalan batu bara. To
 
 ---
 
-### ❌ 5 Diskrepansi Ditemukan
+### ❌ Mendeteksi 5 Pelanggaran Kritis secara simultan
 
 ---
 

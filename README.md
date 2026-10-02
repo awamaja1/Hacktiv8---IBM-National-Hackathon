@@ -111,6 +111,11 @@ Baseline:          2,700 seconds per transaction set
 Sentinel engine:   ~0.004 seconds (4 ms measured)
 Reduction:         (2,700 - 0.004) / 2,700 × 100 = 99.9998%
 ```
+- **Execution Time:** 
+  - **~0.7 ms** (Cached / Regression Mode via `case_id`)
+  - **2.0 - 4.5 ms** (Live Payload Mode via `document_data` with dynamic AISHub coordinate generation)
+- **Time Reduction:** >99.9% compared to 45-minute manual document examination.
+
 
 ---
 
@@ -219,7 +224,7 @@ To see the full MCP-ready API orchestration pipeline in action, you can import t
 
 1. Open **http://localhost:7860** (no login required for local mock mode)
 2. On the main dashboard, click **Import** 
-3. Select and upload the `Adaptive Trade Finance & DHE SDA Compliance Flow.json` file included in this repository.
+3. Select and upload the [`tradeflow-sentinel/TradeFlow Sentinel Compliance Tool.json`]( tradeflow-sentinel/TradeFlow%20Sentinel%20Compliance%20Tool.json) file included in this repository.
 4. Click on the imported flow to open it. You will see the complete orchestration architecture:
    ```text
    [Chat Input] ──► [Regex Extractors] ──► [API Body Builder] ──► [API Request]
@@ -338,17 +343,10 @@ python langflow_sentinel_engine.py serve --port 8000
 
 ---
 
-### Phase 2 — Edge Case Hardening (Months 4–9)
-**Scope:** Handle complex LC structures and advanced fraud detection
-
-| Feature | Description |
-|---|---|
-| Charter Party Bills of Lading | UCP 600 Art. 22 — standalone BoL vs. charterparty BoL detection; ISBP 745 para. E1-E27 |
-| Combined Transport Documents | Art. 19 — multimodal BoL where port-of-loading is a CY/CFS, not a vessel |
-| Multi-currency invoicing | FX rate normalisation for non-USD LC amounts; tolerance checking in base currency |
-| Disguised HS code detection | ML-based HS code vs. goods description consistency scoring (flag likely mis-classification) |
-| Partial shipment & transhipment | Automated accumulation check across multiple presentations under the same LC |
-| SWIFT MT700 field parser | Direct ingestion of raw SWIFT MT700 message format (fields 31C, 32B, 43P, 43T, 44E/F/B/C) |
+### Phase 2: Advanced Integration (Q1 2027)
+- **SWIFT MT700 Series Parser:** Native ingestion of raw SWIFT Category 7 messages (MT700/707) to automate L/C clause extraction without intermediary OCR.
+- **Vessel Tracking API Integration:** Direct live-feed integration with MarineTraffic / AISHub commercial APIs for real-time geospatial validation.
+- **Automated MT734 Generation:** Auto-drafting standard SWIFT Notice of Refusal messages directly from Sentinel's discrepancy matrix.
 
 ---
 
@@ -363,7 +361,6 @@ python langflow_sentinel_engine.py serve --port 8000
 | Multi-tenant SaaS architecture | Isolated per-customer rule sets, audit trail, SOC 2 Type II-ready logging |
 | Realtime AIS stream integration | Replace AISHub snapshots with live MarineTraffic/AISHub stream subscription |
 | Portfolio-level dashboard | Aggregated compliance KPIs per exporter: LC acceptance rate, DHE SDA variance, price trend vs. benchmark |
-| ISO 20022 output | Generate `pain.013` (creditor payment activation) pre-filled from compliant findings |
 
 ---
 

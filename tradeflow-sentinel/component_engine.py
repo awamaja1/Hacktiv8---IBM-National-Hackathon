@@ -211,12 +211,10 @@ def _run_deterministic_engine(case: dict, lc_ref: dict, rules: dict,
                 f"{active_rule['fx_conversion_to_idr_max_pct']}%"
             )
         if rule_version == "PADG_16_2026":
-            himbara_banks = [b.upper() for b in active_rule["bank_categories"]["HIMBARA"]]
-            nominated = dhe.get("nominated_bank", "").upper()
-            is_himbara = any(h.split("(")[0].strip() in nominated for h in himbara_banks)
-            if not is_himbara:
+            bank_cat = dhe.get("bank_category", "")
+            if "Himbara" not in bank_cat and "STATE_OWNED" not in bank_cat.upper():
                 dhe_issues.append(
-                    f"Nominated bank '{dhe.get('nominated_bank')}' is NOT a Himbara state-owned bank. "
+                    f"Bank category '{bank_cat}' is NOT a Himbara state-owned bank. "
                     f"{rule_version} restricts placement to: "
                     f"{', '.join(active_rule['bank_categories']['HIMBARA'])}"
                 )
