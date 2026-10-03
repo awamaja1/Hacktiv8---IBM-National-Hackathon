@@ -685,17 +685,20 @@ if _FASTAPI_AVAILABLE:
     class VerifyRequest(BaseModel):
         dhe_rule_version: str
         case_id: Optional[str] = None
-        document_data: Optional[dict[str, Any]] = None
+        document_data: Optional[Any] = None
 
     @app.post("/verify-trade-documents", summary="Verify trade documents for compliance")
     async def verify_trade_documents(body: VerifyRequest):
         try:
-            if not body.case_id and not body.document_data:
+            # Handle empty string from Langflow API Body Builder
+            doc_data = body.document_data if isinstance(body.document_data, dict) else None
+            
+            if not body.case_id and not doc_data:
                 raise ValueError("Either case_id or document_data must be provided.")
             result = run_pipeline(
                 case_id=body.case_id,
                 dhe_rule_version=body.dhe_rule_version,
-                document_data=body.document_data
+                document_data=doc_data
             )
             return JSONResponse(content=result)
         except ValueError as exc:
