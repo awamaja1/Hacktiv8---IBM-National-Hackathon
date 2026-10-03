@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from langflow.custom import Component
-from langflow.io import DropdownInput, Output
+from langflow.io import DropdownInput, Output, MultilineInput
 from langflow.schema import Data
 
 # ---------------------------------------------------------------------------
@@ -115,6 +115,13 @@ class TradeDocumentInputComponent(Component):
                 "Switch versions for live regulatory comparison demo."
             ),
         ),
+        MultilineInput(
+            name="live_document_payload",
+            display_name="Live Document Payload (JSON)",
+            info="Paste raw JSON here to override the dropdown case. Must follow schema.",
+            value="",
+            advanced=False,
+        ),
     ]
 
     outputs = [
@@ -129,14 +136,44 @@ class TradeDocumentInputComponent(Component):
         data = _load_data()
         cases = data["cases"]
 
-        if self.case_id not in cases:
-            raise ValueError(
-                f"Unknown case_id '{self.case_id}'. "
-                f"Available: {list(cases.keys())}"
-            )
-
-        case = cases[self.case_id]
-        dhe_rule_version = self.dhe_rule_version or data["_meta"]["active_rule_version"]
+        case = None
+        if getattr(self, "live_document_payload", "").strip():
+            try:
+                case = json.loads(self.live_document_payload.strip())
+            except json.JSONDecodeError as e:
+                return Data(data={
+                    "case_id": "JSON_PARSE_ERROR",
+                    "overall_status": "ERROR - INVALID JSON FORMAT",
+                    "discrepancy_count": 1,
+                    "dhe_rule_version": "UNKNOWN",
+                    "processing_time_ms": 0.0,
+                    "roi_context": {
+                        "baseline_review_time_s": 2700,
+                        "sentinel_time_ms": 0.0,
+                        "sentinel_time_s": 0.0,
+                        "time_reduction_pct": 0.0
+                    },
+                    "llm_prompt_context": "Sistem gagal mengekstrak data karena format JSON cacat (JSONDecodeError). Beritahu user bahwa ada kesalahan sintaksis seperti koma atau tanda kutip yang hilang pada payload.",
+                    "check_results": {
+                        "JSON_Validation": {
+                            "status": "FAIL",
+                            "message": "Terdeteksi kesalahan format pada input JSON (missing comma, trailing quote, dll)."
+                        }
+                    },
+                    "discrepancy_notes": [
+                        "FATAL ERROR: Format JSON yang dimasukkan tidak valid. Harap periksa kembali sintaksis payload."
+                    ]
+                })
+        
+        if case is None:
+            if self.case_id not in cases:
+                raise ValueError(
+                    f"Unknown case_id '{self.case_id}'. "
+                    f"Available: {list(cases.keys())}"
+                )
+            case = cases[self.case_id]
+        
+        dhe_rule_version = getattr(self, "dhe_rule_version", None) or data["_meta"]["active_rule_version"]
 
         # Apply Guardrail 1
         g1_warnings: list[str] = []

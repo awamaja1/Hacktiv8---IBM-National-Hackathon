@@ -100,7 +100,7 @@ TradeFlow Sentinel is a deterministic-first, AI-augmented compliance automation 
 | Metric | Manual Process | TradeFlow Sentinel | Delta |
 |---|---|---|---|
 | Review time per transaction set | 45 min (2,700 s) | < 5 s | **> 99.9% reduction** |
-| Exact measured reduction | — | 2,700 s → ~0.004 s engine | **99.9998% time efficiency gain** |
+| Exact measured reduction | — | 2,700 s → ~0.004 s engine | **99.9% time efficiency gain** |
 | DHE SDA rule version switches | Manual policy lookup (hours) | Runtime parameter (`dhe_rule_version`) | Instant |
 | Predated BoL detection | Manual AIS cross-check (15–20 min) | Automated Haversine + AISHub snapshot | < 1 s |
 | Price manipulation detection | Analyst judgement (subjective) | World Bank Pink Sheet deviation ± tolerance | Deterministic |
@@ -109,11 +109,11 @@ TradeFlow Sentinel is a deterministic-first, AI-augmented compliance automation 
 ```
 Baseline:          2,700 seconds per transaction set
 Sentinel engine:   ~0.004 seconds (4 ms measured)
-Reduction:         (2,700 - 0.004) / 2,700 × 100 = 99.9998%
+Reduction:         (2,700 - 0.004) / 2,700 × 100 = 99.9% (capped)
 ```
 - **Execution Time:** 
   - **~0.7 ms** (Cached / Regression Mode via `case_id`)
-  - **2.0 - 4.5 ms** (Live Payload Mode via `document_data` with dynamic AISHub coordinate generation)
+  - **2.0 - 4.5 ms** (Live Payload Mode via `live_document_payload` with historical positional snapshot matching)
 - **Time Reduction:** >99.9% compared to 45-minute manual document examination.
 
 
@@ -126,13 +126,13 @@ Reduction:         (2,700 - 0.004) / 2,700 × 100 = 99.9998%
 - UCP 600 Art. 5 (document-only examination principle), Art. 18 (Commercial Invoice), Art. 20 (Bill of Lading)
 - ISBP 745 alignment for goods description and HS code consistency
 - SOLAS 7-digit IMO checksum validation
-- AISHub Haversine vessel proximity check (predated BoL detection)
+- AISHub Haversine vessel proximity check with **Historical Positional Snapshots** (matches on-board dates against time-series vessel location data to detect predated BoL)
 - World Bank Pink Sheet price deviation benchmark
 - Versioned DHE SDA evaluator: `BASELINE_PRE_2025` / `PP_8_2025` / `PADG_16_2026`
 
 **Synthetic Test Cases:**
 - `CASE_1_COMPLIANT_CPO` — HS 1511.10, FOB USD 1,820,000, IMO9315460, Tanjung Perak, $910/MT CPO, Himbara Reksus, 40% FX → **COMPLIANT**
-- `CASE_2_DISCREPANT_COAL` — HS 2701.12, FOB USD 5,250,000, IMO9811000, 209.97 NM from Tanjung Priok (predated BoL), $105/MT vs $72/MT benchmark (+45.8%), non-Himbara bank, 80% FX, Regular FX Account → **DISCREPANT** (5 simultaneous violations)
+- `CASE_2_DISCREPANT_COAL` — HS 2701.12, FOB USD 5,250,000, IMO9811000, ~210 NM from Tanjung Priok (historical snapshot predated BoL), $105/MT vs $72/MT benchmark (+45.8%), non-Himbara bank, 80% FX, Regular FX Account → **DISCREPANT** (5 simultaneous violations)
 
 ---
 
@@ -237,6 +237,7 @@ To see the full MCP-ready API orchestration pipeline in action, you can import t
    ```text
    CASE_1_COMPLIANT_CPO PADG_16_2026
    ```
+   *(Alternatively, you can test arbitrary dynamic cases by pasting a raw JSON document payload into the **Live Document Payload (JSON)** field in the Sentinel component).*
 7. The flow will parse the input, orchestrate the API call, and stream the formatted markdown report back to the chat interface.
 
 **Live regulatory version-switch demo (hackathon highlight):**
@@ -251,7 +252,7 @@ To see the full MCP-ready API orchestration pipeline in action, you can import t
 
 | # | Check | Discrepancy |
 |---|---|---|
-| 1 | UCP 600 Art. 20 + AISHub | Predated BoL — vessel MV KALIMANTAN BULK (IMO 9811000) was 209.97 NM from Tanjung Priok on declared on-board date |
+| 1 | UCP 600 Art. 20 + AISHub | Predated BoL — vessel MV KALIMANTAN BULK (IMO 9811000) was ~210 NM (matched from historical snapshots) from Tanjung Priok on declared on-board date |
 | 2 | World Bank Pink Sheet | Price deviation +45.83% exceeds ±10% tolerance (invoice $105/MT vs benchmark $72/MT) |
 | 3 | DHE SDA FX cap | Requested 80% FX conversion exceeds PADG 16/2026 maximum 50% |
 | 4 | DHE SDA bank | PT Bank CIMB Niaga is not Himbara; PADG 16/2026 mandates BRI/BNI/Mandiri/BTN only |

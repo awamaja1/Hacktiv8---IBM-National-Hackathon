@@ -113,16 +113,40 @@ def _run_deterministic_engine(case: dict, lc_ref: dict, rules: dict,
         )
 
     # ── AISHub Vessel Proximity ───────────────────────────────────────
+    board_date = bol["on_board_date"]
+    
+    if "snapshots" in vessel:
+        matched_snapshot = None
+        for s in vessel["snapshots"]:
+            if s.get("date") == board_date:
+                matched_snapshot = s
+                break
+        if not matched_snapshot and len(vessel["snapshots"]) > 0:
+            matched_snapshot = vessel["snapshots"][0]
+            
+        if matched_snapshot:
+            v_lat = matched_snapshot.get("lat")
+            v_lon = matched_snapshot.get("lon")
+            snapshot_date = matched_snapshot.get("date")
+        else:
+            v_lat = vessel.get("lat")
+            v_lon = vessel.get("lon")
+            snapshot_date = vessel.get("snapshot_date")
+    else:
+        v_lat = vessel.get("lat")
+        v_lon = vessel.get("lon")
+        snapshot_date = vessel.get("snapshot_date")
+
     distance_nm = round(_haversine_nm(
-        vessel["lat"], vessel["lon"],
+        v_lat, v_lon,
         port_coords["lat"], port_coords["lon"]
     ), 2)
     aishu_check: dict[str, Any] = {
         "rule": "AISHub Vessel Proximity (on-board date)",
         "vessel": vessel["vessel_name"],
         "imo": vessel["imo"],
-        "snapshot_date": vessel["snapshot_date"],
-        "vessel_position": {"lat": vessel["lat"], "lon": vessel["lon"]},
+        "snapshot_date": snapshot_date,
+        "vessel_position": {"lat": v_lat, "lon": v_lon},
         "port": port_coords.get("port"),
         "port_position": {"lat": port_coords["lat"], "lon": port_coords["lon"]},
         "distance_nm": distance_nm,
@@ -132,7 +156,7 @@ def _run_deterministic_engine(case: dict, lc_ref: dict, rules: dict,
         msg = (
             f"PREDATED BoL (UCP 600 Art. 20): vessel {vessel['vessel_name']} "
             f"(IMO {vessel['imo']}) was {distance_nm} NM from {port_coords.get('port')} "
-            f"on {vessel['snapshot_date']} — physically impossible to be on-board at that port"
+            f"on {snapshot_date} — physically impossible to be on-board at that port"
         )
         bl_issues.append(msg)
         aishu_check["status"] = "FAIL"
@@ -291,6 +315,9 @@ class ComplianceEngineComponent(Component):
         t_start = time.perf_counter()
 
         doc: dict = self.document_set.data if hasattr(self.document_set, "data") else self.document_set
+
+        if doc.get("case_id") == "JSON_PARSE_ERROR":
+            return Data(data=doc)
 
         case = doc["case"]
         case["dhe_rule_version"] = doc["dhe_rule_version"]

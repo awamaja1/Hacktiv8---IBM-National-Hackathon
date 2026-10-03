@@ -100,14 +100,10 @@
       "IMO9811000": {
         "vessel_name": "MV KALIMANTAN BULK",
         "imo": "9811000",
-        "solas_checksum_valid": true,
-        "solas_checksum_value": 0,
-        "snapshot_date": "2026-08-05",
-        "lat": -3.5892,
-        "lon": 109.3241,
-        "distance_nm_from_tanjung_priok": 209.97,
-        "status": "EN ROUTE / MID-SEA",
-        "_discrepancy_note": "Vessel was 209.97 NM from Tanjung Priok on declared BoL on-board date — physically impossible to have loaded at Tanjung Priok on that date. Triggers UCP 600 Art. 20 predated BoL discrepancy."
+        "snapshots": [
+          {"date": "2026-09-28", "lat": -3.5892, "lon": 109.3241, "distance_nm_from_tanjung_priok": 209.97, "status": "EN ROUTE / MID-SEA"},
+          {"date": "2026-09-30", "lat": -6.1044, "lon": 106.8853, "distance_nm_from_tanjung_priok": 0.1, "status": "AT PORT / LOADING"}
+        ]
       }
     }
   },

@@ -176,6 +176,9 @@ class ComplianceReportComponent(Component):
             else self.compliance_findings
         )
 
+        if doc.get("case_id") == "JSON_PARSE_ERROR":
+            return Data(data=doc)
+
         case_id = doc["case_id"]
         findings = doc["findings"]
         engine_time_ms = doc.get("processing_time_ms", 0)
@@ -205,6 +208,6 @@ class ComplianceReportComponent(Component):
                 "baseline_review_time_s": 2700,
                 "sentinel_time_ms": total_time_ms,
                 "sentinel_time_s": round(total_time_ms / 1000, 3),
-                "time_reduction_pct": round((1 - (total_time_ms / 1000) / 2700) * 100, 2),
+                "time_reduction_pct": min(round((1 - (total_time_ms / 1000) / 2700) * 100, 1), 99.9),
             },
         })

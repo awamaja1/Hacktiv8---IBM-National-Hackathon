@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from langflow.custom import Component
-from langflow.io import DropdownInput, Output
+from langflow.io import DropdownInput, Output, MultilineInput
 from langflow.schema import Data
 
 # ---------------------------------------------------------------------------
@@ -170,16 +170,40 @@ def _run_deterministic_engine(case: dict, lc_ref: dict, rules: dict,
         )
 
     # AISHub vessel proximity
+    board_date = bol["on_board_date"]
+    
+    if "snapshots" in vessel:
+        matched_snapshot = None
+        for s in vessel["snapshots"]:
+            if s.get("date") == board_date:
+                matched_snapshot = s
+                break
+        if not matched_snapshot and len(vessel["snapshots"]) > 0:
+            matched_snapshot = vessel["snapshots"][0]
+            
+        if matched_snapshot:
+            v_lat = matched_snapshot.get("lat")
+            v_lon = matched_snapshot.get("lon")
+            snapshot_date = matched_snapshot.get("date")
+        else:
+            v_lat = vessel.get("lat")
+            v_lon = vessel.get("lon")
+            snapshot_date = vessel.get("snapshot_date")
+    else:
+        v_lat = vessel.get("lat")
+        v_lon = vessel.get("lon")
+        snapshot_date = vessel.get("snapshot_date")
+
     distance_nm = round(_haversine_nm(
-        vessel["lat"], vessel["lon"],
+        v_lat, v_lon,
         port_coords["lat"], port_coords["lon"]
     ), 2)
     aishu_check: dict[str, Any] = {
         "rule": "AISHub Vessel Proximity (on-board date)",
         "vessel": vessel["vessel_name"],
         "imo": vessel["imo"],
-        "snapshot_date": vessel["snapshot_date"],
-        "vessel_position": {"lat": vessel["lat"], "lon": vessel["lon"]},
+        "snapshot_date": snapshot_date,
+        "vessel_position": {"lat": v_lat, "lon": v_lon},
         "port": port_coords.get("port"),
         "port_position": {"lat": port_coords["lat"], "lon": port_coords["lon"]},
         "distance_nm": distance_nm,
@@ -189,7 +213,7 @@ def _run_deterministic_engine(case: dict, lc_ref: dict, rules: dict,
         msg = (
             f"PREDATED BoL (UCP 600 Art. 20): vessel {vessel['vessel_name']} "
             f"(IMO {vessel['imo']}) was {distance_nm} NM from {port_coords.get('port')} "
-            f"on {vessel['snapshot_date']} — physically impossible to be on-board at that port"
+            f"on {snapshot_date} — physically impossible to be on-board at that port"
         )
         bl_issues.append(msg)
         aishu_check["status"] = "FAIL"
@@ -401,7 +425,7 @@ def _guardrail_output(synthesis: str, findings: dict) -> tuple[str, list[str]]:
 # MAIN PIPELINE
 # ---------------------------------------------------------------------------
 
-def _run_pipeline(case_id: str, dhe_rule_version: str | None = None) -> dict:
+def _run_pipeline(case_id: str, dhe_rule_version: str | None = None, live_document_payload: str | None = None) -> dict:
     t_start = time.perf_counter()
     data = _load_data()
     cases = data["cases"]
@@ -414,10 +438,41 @@ def _run_pipeline(case_id: str, dhe_rule_version: str | None = None) -> dict:
         "TANJUNG_PRIOK": data["aishu_vessel_snapshots"]["TANJUNG_PRIOK_COORDS"],
     }
 
-    if case_id not in cases:
-        raise ValueError(f"Unknown case_id '{case_id}'. Available: {list(cases.keys())}")
-
-    case = cases[case_id]
+    case = None
+    if live_document_payload and live_document_payload.strip():
+        try:
+            case = json.loads(live_document_payload.strip())
+            case_id = case.get("case_id", "LIVE_PAYLOAD")
+        except json.JSONDecodeError as e:
+            return {
+                "case_id": "JSON_PARSE_ERROR",
+                "overall_status": "ERROR - INVALID JSON FORMAT",
+                "discrepancy_count": 1,
+                "dhe_rule_version": "UNKNOWN",
+                "processing_time_ms": 0.0,
+                "roi_context": {
+                    "baseline_review_time_s": 2700,
+                    "sentinel_time_ms": 0.0,
+                    "sentinel_time_s": 0.0,
+                    "time_reduction_pct": 0.0
+                },
+                "llm_prompt_context": "Sistem gagal mengekstrak data karena format JSON cacat (JSONDecodeError). Beritahu user bahwa ada kesalahan sintaksis seperti koma atau tanda kutip yang hilang pada payload.",
+                "check_results": {
+                    "JSON_Validation": {
+                        "status": "FAIL",
+                        "message": "Terdeteksi kesalahan format pada input JSON (missing comma, trailing quote, dll)."
+                    }
+                },
+                "discrepancy_notes": [
+                    "FATAL ERROR: Format JSON yang dimasukkan tidak valid. Harap periksa kembali sintaksis payload."
+                ]
+            }
+            
+    if case is None:
+        if case_id not in cases:
+            raise ValueError(f"Unknown case_id '{case_id}'. Available: {list(cases.keys())}")
+        case = cases[case_id]
+        
     if dhe_rule_version:
         case = dict(case)
         case["dhe_rule_version"] = dhe_rule_version
@@ -435,7 +490,7 @@ def _run_pipeline(case_id: str, dhe_rule_version: str | None = None) -> dict:
 
     lc_ref = lc_refs[case["lc_reference"]]
     imo_key = f"IMO{case['bill_of_lading']['imo_number']}"
-    vessel = vessels_db[imo_key]
+    vessel = vessels_db.get(imo_key, {"vessel_name": case["bill_of_lading"].get("vessel_name", "UNKNOWN"), "imo": case["bill_of_lading"]["imo_number"], "lat": -6.1044, "lon": 106.8853})
 
     port_name = lc_ref["port_of_loading"]
     port_coords = (
@@ -473,7 +528,7 @@ def _run_pipeline(case_id: str, dhe_rule_version: str | None = None) -> dict:
             "baseline_review_time_s": 2700,
             "sentinel_time_ms": t_elapsed_ms,
             "sentinel_time_s": round(t_elapsed_ms / 1000, 3),
-            "time_reduction_pct": round((1 - (t_elapsed_ms / 1000) / 2700) * 100, 2),
+            "time_reduction_pct": min(round((1 - (t_elapsed_ms / 1000) / 2700) * 100, 1), 99.9),
         },
     }
 
@@ -526,6 +581,13 @@ class TradeFlowSentinelComponent(Component):
                 "Switch versions for live regulatory comparison demo."
             ),
         ),
+        MultilineInput(
+            name="live_document_payload",
+            display_name="Live Document Payload (JSON)",
+            info="Paste raw JSON here to override the dropdown case. Must follow schema.",
+            value="",
+            advanced=False,
+        ),
     ]
 
     outputs = [
@@ -540,5 +602,6 @@ class TradeFlowSentinelComponent(Component):
         result = _run_pipeline(
             case_id=self.case_id,
             dhe_rule_version=self.dhe_rule_version,
+            live_document_payload=getattr(self, "live_document_payload", None),
         )
         return Data(data=result)

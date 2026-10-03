@@ -250,16 +250,28 @@ def run_deterministic_engine(case: dict, lc_ref: dict, rules: dict, vessel: dict
     board_date = case.get("bill_of_lading", {}).get("on_board_date", "")
     vessel_name = case.get("bill_of_lading", {}).get("vessel_name", "")
 
-    if vessel_name == "MV KALIMANTAN BULK":
-        if board_date < "2026-09-30":
-            vessel_lat = random.uniform(-5.5000, -3.5000)
-            vessel_lon = random.uniform(107.5000, 110.5000)
+    if "snapshots" in vessel:
+        matched_snapshot = None
+        for s in vessel["snapshots"]:
+            if s.get("date") == board_date:
+                matched_snapshot = s
+                break
+        if not matched_snapshot and len(vessel["snapshots"]) > 0:
+            matched_snapshot = vessel["snapshots"][0]
+            
+        if matched_snapshot:
+            vessel_lat = matched_snapshot.get("lat")
+            vessel_lon = matched_snapshot.get("lon")
+            snapshot_date = matched_snapshot.get("date")
         else:
-            vessel_lat = random.uniform(-6.1100, -6.0900)
-            vessel_lon = random.uniform(106.8700, 106.8900)
+            vessel_lat = vessel.get("lat", -6.1044)
+            vessel_lon = vessel.get("lon", 106.8853)
+            snapshot_date = vessel.get("snapshot_date")
     else:
-        vessel_lat = random.uniform(-6.1100, -6.0900)
-        vessel_lon = random.uniform(106.8700, 106.8900)
+        vessel_lat = vessel.get("lat", -6.1044)
+        vessel_lon = vessel.get("lon", 106.8853)
+        snapshot_date = vessel.get("snapshot_date")
+        
     port_lat = port_coords["lat"]
     port_lon = port_coords["lon"]
     distance_nm = haversine_nm(vessel_lat, vessel_lon, port_lat, port_lon)
@@ -269,7 +281,7 @@ def run_deterministic_engine(case: dict, lc_ref: dict, rules: dict, vessel: dict
         "rule": "AISHub Vessel Proximity (on-board date)",
         "vessel": vessel["vessel_name"],
         "imo": vessel["imo"],
-        "snapshot_date": vessel["snapshot_date"],
+        "snapshot_date": snapshot_date,
         "vessel_position": {"lat": vessel_lat, "lon": vessel_lon},
         "port": port_coords.get("port"),
         "port_position": {"lat": port_lat, "lon": port_lon},
@@ -279,9 +291,9 @@ def run_deterministic_engine(case: dict, lc_ref: dict, rules: dict, vessel: dict
 
     if distance_nm > PORT_PROXIMITY_THRESHOLD_NM:
         msg = (
-            f"PREDATED BoL (UCP 600 Art. 20): vessel {vessel['vessel_name']} "
-            f"(IMO {vessel['imo']}) was {distance_nm} NM from {port_coords.get('port')} "
-            f"on {vessel['snapshot_date']} — physically impossible to be on-board at that port"
+            f"PREDATED BoL (UCP 600 Art. 20): vessel {vessel.get('vessel_name', vessel_name)} "
+            f"(IMO {vessel.get('imo', bol.get('imo_number'))}) was {distance_nm} NM from {port_coords.get('port')} "
+            f"on {snapshot_date} — physically impossible to be on-board at that port"
         )
         bl_issues.append(msg)
         aishu_check["status"] = "FAIL"
@@ -636,8 +648,6 @@ def run_pipeline(case_id: str | None = None, dhe_rule_version: str | None = None
     synthesis, g2_warnings = guardrail_output(synthesis, findings)
 
     t_elapsed_ms = round((time.perf_counter() - t_start) * 1000, 1)
-    # Hitung persentase mentahnya tanpa dibulatkan terlebih dahulu
-    raw_reduction_pct = (1 - (t_elapsed_ms / 1000) / 2700) * 100
 
     return {
         "case_id": case_id,
@@ -653,7 +663,7 @@ def run_pipeline(case_id: str | None = None, dhe_rule_version: str | None = None
             "baseline_review_time_s": 2700,
             "sentinel_time_ms": t_elapsed_ms,
             "sentinel_time_s": round(t_elapsed_ms / 1000, 3),
-            "time_reduction_pct": raw_reduction_pct,
+            "time_reduction_pct": min(round((1 - (t_elapsed_ms / 1000) / 2700) * 100, 1), 99.9),
         },
     }
 
