@@ -111,7 +111,7 @@ def _guardrail_output(synthesis: str, findings: dict) -> tuple[str, list[str]]:
         if dev != "0.0" and dev not in synthesis:
             warnings.append(f"GUARDRAIL_2: Price deviation {dev}% not found verbatim in synthesis")
     aishu = findings["checks"].get("aishu_proximity", {})
-    if aishu and aishu.get("status") == "FAIL":
+    if aishu :
         dist = str(aishu.get("distance_nm", ""))
         if dist and dist not in synthesis:
             warnings.append(f"GUARDRAIL_2: AISHub distance {dist} NM not found verbatim in synthesis")

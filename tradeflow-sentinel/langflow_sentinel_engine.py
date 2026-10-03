@@ -526,7 +526,7 @@ def guardrail_output(synthesis: str, findings: dict) -> tuple[str, list[str]]:
             )
 
     aishu = findings["checks"].get("aishu_proximity", {})
-    if aishu and aishu.get("status") == "FAIL":
+    if aishu :
         dist = str(aishu.get("distance_nm", ""))
         if dist and dist not in synthesis:
             warnings.append(
