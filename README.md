@@ -3,6 +3,7 @@
 
 > **Hackathon Theme:** Financial (Primary) · Productivity & Smart Business (Secondary)
 > **IBM Stack:** IBM watsonx Orchestrate + Langflow + IBM Bob
+> **Pitch Deck:** [TradeFlow Sentinel Pitch Deck (Canva)](https://canva.link/w9xre2lqzl1nw87)
 
 ---
 
