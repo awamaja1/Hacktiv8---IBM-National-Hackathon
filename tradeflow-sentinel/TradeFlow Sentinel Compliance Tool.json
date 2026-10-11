@@ -7,7 +7,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "Prompt Template",
-            "id": "Prompt Template-mmJvn",
+            "id": "Prompt Template-88Uc7",
             "name": "prompt",
             "output_types": [
               "Message"
@@ -15,7 +15,7 @@
           },
           "targetHandle": {
             "fieldName": "input_value",
-            "id": "ChatOutput-CrXpQ",
+            "id": "ChatOutput-cjR2F",
             "inputTypes": [
               "Data",
               "JSON",
@@ -26,12 +26,12 @@
             "type": "other"
           }
         },
-        "id": "reactflow__edge-Prompt Template-mmJvn{œdataTypeœ:œPrompt Templateœ,œidœ:œPrompt Template-mmJvnœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-CrXpQ{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-CrXpQœ,œinputTypesœ:[œDataœ,œJSONœ,œDataFrameœ,œTableœ,œMessageœ],œtypeœ:œotherœ}",
+        "id": "reactflow__edge-Prompt Template-88Uc7{œdataTypeœ:œPrompt Templateœ,œidœ:œPrompt Template-88Uc7œ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-cjR2F{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-cjR2Fœ,œinputTypesœ:[œDataœ,œJSONœ,œDataFrameœ,œTableœ,œMessageœ],œtypeœ:œotherœ}",
         "selected": false,
-        "source": "Prompt Template-mmJvn",
-        "sourceHandle": "{œdataTypeœ:œPrompt Templateœ,œidœ:œPrompt Template-mmJvnœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "ChatOutput-CrXpQ",
-        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-CrXpQœ,œinputTypesœ:[œDataœ,œJSONœ,œDataFrameœ,œTableœ,œMessageœ],œtypeœ:œotherœ}"
+        "source": "Prompt Template-88Uc7",
+        "sourceHandle": "{œdataTypeœ:œPrompt Templateœ,œidœ:œPrompt Template-88Uc7œ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "ChatOutput-cjR2F",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-cjR2Fœ,œinputTypesœ:[œDataœ,œJSONœ,œDataFrameœ,œTableœ,œMessageœ],œtypeœ:œotherœ}"
       },
       {
         "animated": false,
@@ -39,7 +39,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "APIRequest",
-            "id": "APIRequest-p3sMv",
+            "id": "APIRequest-UVyMP",
             "name": "data",
             "output_types": [
               "JSON"
@@ -47,7 +47,7 @@
           },
           "targetHandle": {
             "fieldName": "api_data",
-            "id": "SentinelComplianceChecker-G0F0J",
+            "id": "SentinelComplianceChecker-w4yek",
             "inputTypes": [
               "Data",
               "JSON"
@@ -55,12 +55,12 @@
             "type": "other"
           }
         },
-        "id": "reactflow__edge-APIRequest-p3sMv{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-p3sMvœ,œnameœ:œdataœ,œoutput_typesœ:[œJSONœ]}-SentinelComplianceChecker-G0F0J{œfieldNameœ:œapi_dataœ,œidœ:œSentinelComplianceChecker-G0F0Jœ,œinputTypesœ:[œDataœ,œJSONœ],œtypeœ:œotherœ}",
+        "id": "reactflow__edge-APIRequest-UVyMP{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-UVyMPœ,œnameœ:œdataœ,œoutput_typesœ:[œJSONœ]}-SentinelComplianceChecker-w4yek{œfieldNameœ:œapi_dataœ,œidœ:œSentinelComplianceChecker-w4yekœ,œinputTypesœ:[œDataœ,œJSONœ],œtypeœ:œotherœ}",
         "selected": false,
-        "source": "APIRequest-p3sMv",
-        "sourceHandle": "{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-p3sMvœ,œnameœ:œdataœ,œoutput_typesœ:[œJSONœ]}",
-        "target": "SentinelComplianceChecker-G0F0J",
-        "targetHandle": "{œfieldNameœ:œapi_dataœ,œidœ:œSentinelComplianceChecker-G0F0Jœ,œinputTypesœ:[œDataœ,œJSONœ],œtypeœ:œotherœ}"
+        "source": "APIRequest-UVyMP",
+        "sourceHandle": "{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-UVyMPœ,œnameœ:œdataœ,œoutput_typesœ:[œJSONœ]}",
+        "target": "SentinelComplianceChecker-w4yek",
+        "targetHandle": "{œfieldNameœ:œapi_dataœ,œidœ:œSentinelComplianceChecker-w4yekœ,œinputTypesœ:[œDataœ,œJSONœ],œtypeœ:œotherœ}"
       },
       {
         "animated": false,
@@ -68,7 +68,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "SentinelComplianceChecker",
-            "id": "SentinelComplianceChecker-G0F0J",
+            "id": "SentinelComplianceChecker-w4yek",
             "name": "report",
             "output_types": [
               "Message"
@@ -76,19 +76,19 @@
           },
           "targetHandle": {
             "fieldName": "report_data",
-            "id": "Prompt Template-mmJvn",
+            "id": "Prompt Template-88Uc7",
             "inputTypes": [
               "Message"
             ],
             "type": "str"
           }
         },
-        "id": "reactflow__edge-SentinelComplianceChecker-G0F0J{œdataTypeœ:œSentinelComplianceCheckerœ,œidœ:œSentinelComplianceChecker-G0F0Jœ,œnameœ:œreportœ,œoutput_typesœ:[œMessageœ]}-Prompt Template-mmJvn{œfieldNameœ:œreport_dataœ,œidœ:œPrompt Template-mmJvnœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-SentinelComplianceChecker-w4yek{œdataTypeœ:œSentinelComplianceCheckerœ,œidœ:œSentinelComplianceChecker-w4yekœ,œnameœ:œreportœ,œoutput_typesœ:[œMessageœ]}-Prompt Template-88Uc7{œfieldNameœ:œreport_dataœ,œidœ:œPrompt Template-88Uc7œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "SentinelComplianceChecker-G0F0J",
-        "sourceHandle": "{œdataTypeœ:œSentinelComplianceCheckerœ,œidœ:œSentinelComplianceChecker-G0F0Jœ,œnameœ:œreportœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "Prompt Template-mmJvn",
-        "targetHandle": "{œfieldNameœ:œreport_dataœ,œidœ:œPrompt Template-mmJvnœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        "source": "SentinelComplianceChecker-w4yek",
+        "sourceHandle": "{œdataTypeœ:œSentinelComplianceCheckerœ,œidœ:œSentinelComplianceChecker-w4yekœ,œnameœ:œreportœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "Prompt Template-88Uc7",
+        "targetHandle": "{œfieldNameœ:œreport_dataœ,œidœ:œPrompt Template-88Uc7œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
       },
       {
         "animated": false,
@@ -96,7 +96,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "ChatInput",
-            "id": "ChatInput-DKbnU",
+            "id": "ChatInput-klMI8",
             "name": "message",
             "output_types": [
               "Message"
@@ -104,19 +104,19 @@
           },
           "targetHandle": {
             "fieldName": "chat_input",
-            "id": "CustomComponent-wIAO9",
+            "id": "NLPIntentExtractor-U67Op",
             "inputTypes": [
               "Message"
             ],
             "type": "str"
           }
         },
-        "id": "xy-edge__ChatInput-DKbnU{œdataTypeœ:œChatInputœ,œidœ:œChatInput-DKbnUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-CustomComponent-wIAO9{œfieldNameœ:œchat_inputœ,œidœ:œCustomComponent-wIAO9œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-ChatInput-klMI8{œdataTypeœ:œChatInputœ,œidœ:œChatInput-klMI8œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-NLPIntentExtractor-U67Op{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-U67Opœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "ChatInput-DKbnU",
-        "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-DKbnUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "CustomComponent-wIAO9",
-        "targetHandle": "{œfieldNameœ:œchat_inputœ,œidœ:œCustomComponent-wIAO9œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        "source": "ChatInput-klMI8",
+        "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-klMI8œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "NLPIntentExtractor-U67Op",
+        "targetHandle": "{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-U67Opœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
       },
       {
         "animated": false,
@@ -124,7 +124,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "ChatInput",
-            "id": "ChatInput-DKbnU",
+            "id": "ChatInput-klMI8",
             "name": "message",
             "output_types": [
               "Message"
@@ -132,19 +132,19 @@
           },
           "targetHandle": {
             "fieldName": "chat_input",
-            "id": "NLPIntentExtractor-UlTBR",
+            "id": "NLPIntentExtractor-gy36s",
             "inputTypes": [
               "Message"
             ],
             "type": "str"
           }
         },
-        "id": "xy-edge__ChatInput-DKbnU{œdataTypeœ:œChatInputœ,œidœ:œChatInput-DKbnUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-NLPIntentExtractor-UlTBR{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-UlTBRœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-ChatInput-klMI8{œdataTypeœ:œChatInputœ,œidœ:œChatInput-klMI8œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-NLPIntentExtractor-gy36s{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-gy36sœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "ChatInput-DKbnU",
-        "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-DKbnUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "NLPIntentExtractor-UlTBR",
-        "targetHandle": "{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-UlTBRœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        "source": "ChatInput-klMI8",
+        "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-klMI8œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "NLPIntentExtractor-gy36s",
+        "targetHandle": "{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-gy36sœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
       },
       {
         "animated": false,
@@ -152,7 +152,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "ChatInput",
-            "id": "ChatInput-DKbnU",
+            "id": "ChatInput-klMI8",
             "name": "message",
             "output_types": [
               "Message"
@@ -160,19 +160,19 @@
           },
           "targetHandle": {
             "fieldName": "chat_input",
-            "id": "NLPIntentExtractor-K36uB",
+            "id": "NLPIntentExtractor-hZwtG",
             "inputTypes": [
               "Message"
             ],
             "type": "str"
           }
         },
-        "id": "xy-edge__ChatInput-DKbnU{œdataTypeœ:œChatInputœ,œidœ:œChatInput-DKbnUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-NLPIntentExtractor-K36uB{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-K36uBœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-ChatInput-klMI8{œdataTypeœ:œChatInputœ,œidœ:œChatInput-klMI8œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-NLPIntentExtractor-hZwtG{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-hZwtGœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "ChatInput-DKbnU",
-        "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-DKbnUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "NLPIntentExtractor-K36uB",
-        "targetHandle": "{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-K36uBœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        "source": "ChatInput-klMI8",
+        "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-klMI8œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "NLPIntentExtractor-hZwtG",
+        "targetHandle": "{œfieldNameœ:œchat_inputœ,œidœ:œNLPIntentExtractor-hZwtGœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
       },
       {
         "animated": false,
@@ -180,7 +180,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "NLPIntentExtractor",
-            "id": "NLPIntentExtractor-K36uB",
+            "id": "NLPIntentExtractor-hZwtG",
             "name": "out_json",
             "output_types": [
               "Message"
@@ -188,7 +188,7 @@
           },
           "targetHandle": {
             "fieldName": "document_message",
-            "id": "CustomComponent-0M1Q8",
+            "id": "CleanPayloadBuilderComponent-X9fgI",
             "inputTypes": [
               "Message",
               "Text"
@@ -196,12 +196,12 @@
             "type": "str"
           }
         },
-        "id": "xy-edge__NLPIntentExtractor-K36uB{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-K36uBœ,œnameœ:œout_jsonœ,œoutput_typesœ:[œMessageœ]}-CustomComponent-0M1Q8{œfieldNameœ:œdocument_messageœ,œidœ:œCustomComponent-0M1Q8œ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-NLPIntentExtractor-hZwtG{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-hZwtGœ,œnameœ:œout_jsonœ,œoutput_typesœ:[œMessageœ]}-CleanPayloadBuilderComponent-X9fgI{œfieldNameœ:œdocument_messageœ,œidœ:œCleanPayloadBuilderComponent-X9fgIœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "NLPIntentExtractor-K36uB",
-        "sourceHandle": "{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-K36uBœ,œnameœ:œout_jsonœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "CustomComponent-0M1Q8",
-        "targetHandle": "{œfieldNameœ:œdocument_messageœ,œidœ:œCustomComponent-0M1Q8œ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}"
+        "source": "NLPIntentExtractor-hZwtG",
+        "sourceHandle": "{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-hZwtGœ,œnameœ:œout_jsonœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "CleanPayloadBuilderComponent-X9fgI",
+        "targetHandle": "{œfieldNameœ:œdocument_messageœ,œidœ:œCleanPayloadBuilderComponent-X9fgIœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}"
       },
       {
         "animated": false,
@@ -209,7 +209,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "NLPIntentExtractor",
-            "id": "NLPIntentExtractor-UlTBR",
+            "id": "NLPIntentExtractor-gy36s",
             "name": "out_dhe_rule",
             "output_types": [
               "Message"
@@ -217,7 +217,7 @@
           },
           "targetHandle": {
             "fieldName": "dhe_version_message",
-            "id": "CustomComponent-0M1Q8",
+            "id": "CleanPayloadBuilderComponent-X9fgI",
             "inputTypes": [
               "Message",
               "Text"
@@ -225,12 +225,12 @@
             "type": "str"
           }
         },
-        "id": "xy-edge__NLPIntentExtractor-UlTBR{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-UlTBRœ,œnameœ:œout_dhe_ruleœ,œoutput_typesœ:[œMessageœ]}-CustomComponent-0M1Q8{œfieldNameœ:œdhe_version_messageœ,œidœ:œCustomComponent-0M1Q8œ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-NLPIntentExtractor-gy36s{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-gy36sœ,œnameœ:œout_dhe_ruleœ,œoutput_typesœ:[œMessageœ]}-CleanPayloadBuilderComponent-X9fgI{œfieldNameœ:œdhe_version_messageœ,œidœ:œCleanPayloadBuilderComponent-X9fgIœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "NLPIntentExtractor-UlTBR",
-        "sourceHandle": "{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-UlTBRœ,œnameœ:œout_dhe_ruleœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "CustomComponent-0M1Q8",
-        "targetHandle": "{œfieldNameœ:œdhe_version_messageœ,œidœ:œCustomComponent-0M1Q8œ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}"
+        "source": "NLPIntentExtractor-gy36s",
+        "sourceHandle": "{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-gy36sœ,œnameœ:œout_dhe_ruleœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "CleanPayloadBuilderComponent-X9fgI",
+        "targetHandle": "{œfieldNameœ:œdhe_version_messageœ,œidœ:œCleanPayloadBuilderComponent-X9fgIœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}"
       },
       {
         "animated": false,
@@ -238,7 +238,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "NLPIntentExtractor",
-            "id": "CustomComponent-wIAO9",
+            "id": "NLPIntentExtractor-U67Op",
             "name": "out_case_id",
             "output_types": [
               "Message"
@@ -246,7 +246,7 @@
           },
           "targetHandle": {
             "fieldName": "case_id_message",
-            "id": "CustomComponent-0M1Q8",
+            "id": "CleanPayloadBuilderComponent-X9fgI",
             "inputTypes": [
               "Message",
               "Text"
@@ -254,12 +254,12 @@
             "type": "str"
           }
         },
-        "id": "xy-edge__CustomComponent-wIAO9{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œCustomComponent-wIAO9œ,œnameœ:œout_case_idœ,œoutput_typesœ:[œMessageœ]}-CustomComponent-0M1Q8{œfieldNameœ:œcase_id_messageœ,œidœ:œCustomComponent-0M1Q8œ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-NLPIntentExtractor-U67Op{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-U67Opœ,œnameœ:œout_case_idœ,œoutput_typesœ:[œMessageœ]}-CleanPayloadBuilderComponent-X9fgI{œfieldNameœ:œcase_id_messageœ,œidœ:œCleanPayloadBuilderComponent-X9fgIœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "CustomComponent-wIAO9",
-        "sourceHandle": "{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œCustomComponent-wIAO9œ,œnameœ:œout_case_idœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "CustomComponent-0M1Q8",
-        "targetHandle": "{œfieldNameœ:œcase_id_messageœ,œidœ:œCustomComponent-0M1Q8œ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}"
+        "source": "NLPIntentExtractor-U67Op",
+        "sourceHandle": "{œdataTypeœ:œNLPIntentExtractorœ,œidœ:œNLPIntentExtractor-U67Opœ,œnameœ:œout_case_idœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "CleanPayloadBuilderComponent-X9fgI",
+        "targetHandle": "{œfieldNameœ:œcase_id_messageœ,œidœ:œCleanPayloadBuilderComponent-X9fgIœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}"
       },
       {
         "animated": false,
@@ -267,7 +267,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "CleanPayloadBuilderComponent",
-            "id": "CustomComponent-0M1Q8",
+            "id": "CleanPayloadBuilderComponent-X9fgI",
             "name": "payload_data",
             "output_types": [
               "JSON"
@@ -275,7 +275,7 @@
           },
           "targetHandle": {
             "fieldName": "body",
-            "id": "APIRequest-p3sMv",
+            "id": "APIRequest-UVyMP",
             "inputTypes": [
               "Data",
               "JSON"
@@ -283,18 +283,18 @@
             "type": "table"
           }
         },
-        "id": "xy-edge__CustomComponent-0M1Q8{œdataTypeœ:œCleanPayloadBuilderComponentœ,œidœ:œCustomComponent-0M1Q8œ,œnameœ:œpayload_dataœ,œoutput_typesœ:[œJSONœ]}-APIRequest-p3sMv{œfieldNameœ:œbodyœ,œidœ:œAPIRequest-p3sMvœ,œinputTypesœ:[œDataœ,œJSONœ],œtypeœ:œtableœ}",
+        "id": "reactflow__edge-CleanPayloadBuilderComponent-X9fgI{œdataTypeœ:œCleanPayloadBuilderComponentœ,œidœ:œCleanPayloadBuilderComponent-X9fgIœ,œnameœ:œpayload_dataœ,œoutput_typesœ:[œJSONœ]}-APIRequest-UVyMP{œfieldNameœ:œbodyœ,œidœ:œAPIRequest-UVyMPœ,œinputTypesœ:[œDataœ,œJSONœ],œtypeœ:œtableœ}",
         "selected": false,
-        "source": "CustomComponent-0M1Q8",
-        "sourceHandle": "{œdataTypeœ:œCleanPayloadBuilderComponentœ,œidœ:œCustomComponent-0M1Q8œ,œnameœ:œpayload_dataœ,œoutput_typesœ:[œJSONœ]}",
-        "target": "APIRequest-p3sMv",
-        "targetHandle": "{œfieldNameœ:œbodyœ,œidœ:œAPIRequest-p3sMvœ,œinputTypesœ:[œDataœ,œJSONœ],œtypeœ:œtableœ}"
+        "source": "CleanPayloadBuilderComponent-X9fgI",
+        "sourceHandle": "{œdataTypeœ:œCleanPayloadBuilderComponentœ,œidœ:œCleanPayloadBuilderComponent-X9fgIœ,œnameœ:œpayload_dataœ,œoutput_typesœ:[œJSONœ]}",
+        "target": "APIRequest-UVyMP",
+        "targetHandle": "{œfieldNameœ:œbodyœ,œidœ:œAPIRequest-UVyMPœ,œinputTypesœ:[œDataœ,œJSONœ],œtypeœ:œtableœ}"
       }
     ],
     "nodes": [
       {
         "data": {
-          "id": "Prompt Template-mmJvn",
+          "id": "Prompt Template-88Uc7",
           "node": {
             "add_tool_output": null,
             "base_classes": [
@@ -484,11 +484,7 @@
           "type": "Prompt Template"
         },
         "dragging": false,
-        "id": "Prompt Template-mmJvn",
-        "measured": {
-          "height": 348,
-          "width": 320
-        },
+        "id": "Prompt Template-88Uc7",
         "position": {
           "x": 982.2885144348131,
           "y": 346.3315303636818
@@ -498,7 +494,7 @@
       },
       {
         "data": {
-          "id": "ChatOutput-CrXpQ",
+          "id": "ChatOutput-cjR2F",
           "node": {
             "base_classes": [
               "Message"
@@ -793,11 +789,7 @@
           "type": "ChatOutput"
         },
         "dragging": false,
-        "id": "ChatOutput-CrXpQ",
-        "measured": {
-          "height": 252,
-          "width": 320
-        },
+        "id": "ChatOutput-cjR2F",
         "position": {
           "x": 1338.6575212286068,
           "y": 305.21699263687117
@@ -807,7 +799,7 @@
       },
       {
         "data": {
-          "id": "ChatInput-DKbnU",
+          "id": "ChatInput-klMI8",
           "node": {
             "base_classes": [
               "Message"
@@ -1095,11 +1087,7 @@
           "type": "ChatInput"
         },
         "dragging": false,
-        "id": "ChatInput-DKbnU",
-        "measured": {
-          "height": 208,
-          "width": 320
-        },
+        "id": "ChatInput-klMI8",
         "position": {
           "x": -465.97532882259554,
           "y": 321.0686492310165
@@ -1109,7 +1097,7 @@
       },
       {
         "data": {
-          "id": "APIRequest-p3sMv",
+          "id": "APIRequest-UVyMP",
           "node": {
             "base_classes": [
               "JSON"
@@ -1136,7 +1124,7 @@
             ],
             "frozen": false,
             "icon": "Globe",
-            "last_updated": "2026-10-02T07:02:49.885Z",
+            "last_updated": "2026-10-11T16:00:16.394Z",
             "legacy": false,
             "lf_version": "1.12.3",
             "metadata": {
@@ -1188,10 +1176,10 @@
             "pinned": false,
             "template": {
               "_frontend_node_flow_id": {
-                "value": "bd730a1e-abb8-47d4-bc77-5a31ef637332"
+                "value": "244c0856-5b4f-4b6e-bd4c-87e0c3331654"
               },
               "_frontend_node_folder_id": {
-                "value": "990f7c71-46f7-4843-8c6f-736f9e7a754e"
+                "value": "5a2ac482-a249-460a-9458-6fd51bada8a8"
               },
               "_type": "Component",
               "body": {
@@ -1547,11 +1535,7 @@
           "type": "APIRequest"
         },
         "dragging": false,
-        "id": "APIRequest-p3sMv",
-        "measured": {
-          "height": 637,
-          "width": 320
-        },
+        "id": "APIRequest-UVyMP",
         "position": {
           "x": 629.3542783620026,
           "y": 142.6035239030713
@@ -1561,7 +1545,7 @@
       },
       {
         "data": {
-          "id": "SentinelComplianceChecker-G0F0J",
+          "id": "SentinelComplianceChecker-w4yek",
           "node": {
             "base_classes": [
               "Message"
@@ -1670,11 +1654,7 @@
           "type": "SentinelComplianceChecker"
         },
         "dragging": false,
-        "id": "SentinelComplianceChecker-G0F0J",
-        "measured": {
-          "height": 202,
-          "width": 320
-        },
+        "id": "SentinelComplianceChecker-w4yek",
         "position": {
           "x": 976.7722554999007,
           "y": 124.46219579062671
@@ -1684,7 +1664,7 @@
       },
       {
         "data": {
-          "id": "CustomComponent-wIAO9",
+          "id": "NLPIntentExtractor-U67Op",
           "node": {
             "base_classes": [
               "Message"
@@ -1693,7 +1673,7 @@
             "conditional_paths": [],
             "custom_fields": {},
             "description": "Mengekstrak case_id, dhe_rule_version, atau JSON mentah secara instan dari bahasa natural.",
-            "display_name": "NLP Intent Extractor",
+            "display_name": "Intent & Payload Extractor",
             "documentation": "",
             "edited": true,
             "field_order": [
@@ -1828,21 +1808,17 @@
           "type": "NLPIntentExtractor"
         },
         "dragging": false,
-        "id": "CustomComponent-wIAO9",
-        "measured": {
-          "height": 224,
-          "width": 320
-        },
+        "id": "NLPIntentExtractor-U67Op",
         "position": {
-          "x": -121.24412283650352,
-          "y": 629.1864903734801
+          "x": -107.13619410153987,
+          "y": 108.84342526927504
         },
         "selected": false,
         "type": "genericNode"
       },
       {
         "data": {
-          "id": "NLPIntentExtractor-UlTBR",
+          "id": "NLPIntentExtractor-gy36s",
           "node": {
             "base_classes": [
               "Message"
@@ -1851,7 +1827,7 @@
             "conditional_paths": [],
             "custom_fields": {},
             "description": "Mengekstrak case_id, dhe_rule_version, atau JSON mentah secara instan dari bahasa natural.",
-            "display_name": "NLP Intent Extractor",
+            "display_name": "Intent & Payload Extractor",
             "documentation": "",
             "edited": true,
             "field_order": [
@@ -1986,21 +1962,17 @@
           "type": "NLPIntentExtractor"
         },
         "dragging": false,
-        "id": "NLPIntentExtractor-UlTBR",
-        "measured": {
-          "height": 224,
-          "width": 320
-        },
+        "id": "NLPIntentExtractor-gy36s",
         "position": {
-          "x": -117.80834042031464,
-          "y": 393.76019851887133
+          "x": -106.5651689841699,
+          "y": 345.16592703556256
         },
         "selected": false,
         "type": "genericNode"
       },
       {
         "data": {
-          "id": "NLPIntentExtractor-K36uB",
+          "id": "NLPIntentExtractor-hZwtG",
           "node": {
             "base_classes": [
               "Message"
@@ -2009,7 +1981,7 @@
             "conditional_paths": [],
             "custom_fields": {},
             "description": "Mengekstrak case_id, dhe_rule_version, atau JSON mentah secara instan dari bahasa natural.",
-            "display_name": "NLP Intent Extractor",
+            "display_name": "Intent & Payload Extractor",
             "documentation": "",
             "edited": true,
             "field_order": [
@@ -2146,21 +2118,17 @@
           "type": "NLPIntentExtractor"
         },
         "dragging": false,
-        "id": "NLPIntentExtractor-K36uB",
-        "measured": {
-          "height": 224,
-          "width": 320
-        },
+        "id": "NLPIntentExtractor-hZwtG",
         "position": {
-          "x": -119.52262525817909,
-          "y": 158.42084357674142
+          "x": -109.07584646167264,
+          "y": 581.3684407235766
         },
         "selected": false,
         "type": "genericNode"
       },
       {
         "data": {
-          "id": "CustomComponent-0M1Q8",
+          "id": "CleanPayloadBuilderComponent-X9fgI",
           "node": {
             "base_classes": [
               "JSON"
@@ -2323,11 +2291,7 @@
           "type": "CleanPayloadBuilderComponent"
         },
         "dragging": false,
-        "id": "CustomComponent-0M1Q8",
-        "measured": {
-          "height": 389,
-          "width": 320
-        },
+        "id": "CleanPayloadBuilderComponent-X9fgI",
         "position": {
           "x": 274.5416926506824,
           "y": 268.83603766093114
@@ -2338,13 +2302,13 @@
     ],
     "viewport": {
       "x": 281.649238489351,
-      "y": 99.52083938510327,
+      "y": 117.33100514209127,
       "zoom": 0.5615087801975995
     }
   },
   "description": "Runs UCP 600 Art. 18/20 + SOLAS + AISHub + World Bank + DHE SDA compliance checks on Indonesian trade documents. Accepts case_id with dhe_rule_version or document_data with dhe_rule_version as input.",
   "endpoint_name": null,
-  "id": "bd730a1e-abb8-47d4-bc77-5a31ef637332",
+  "id": "244c0856-5b4f-4b6e-bd4c-87e0c3331654",
   "is_component": false,
   "last_tested_version": "1.12.3",
   "locked": false,
