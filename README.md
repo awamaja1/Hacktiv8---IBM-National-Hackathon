@@ -232,7 +232,7 @@ To see the full MCP-ready API orchestration pipeline in action, you can import t
                                                                         │
    [Chat Output] ◄── [Report Formatter] ◄── [Sentinel Checker] ◄────────┘
    ```
-   ![Langflow Architecture](Docs/IMG/Screenshot%202026-10-01%20211545.png)
+   ![Langflow Architecture](Docs/IMG/01-workflow.png)
 5. To execute the compliance check, click the **Playground** button at the bottom right of the canvas.
 6. Type the case parameters in the chat input. For example, to run Test Case 1:
    ```text
