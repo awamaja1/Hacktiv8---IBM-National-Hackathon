@@ -1,17 +1,17 @@
 {
   "mcpServers": {
-      "lf-starter_project": {
-      "command": "uvx",
+    "lf-starter_project": {
+      "command": "cmd",
       "args": [
-        "--with",
-        "mcp<2.0.0",
+        "/c",
+        "uvx",
         "mcp-proxy",
         "--transport",
         "streamablehttp",
         "--headers",
         "x-api-key",
-        "sk-dcikzDhH4CR-_qA1GST7OKDtlBJCMzHgVzMQPpNPsuA",
-        "http://localhost:7860/api/v1/mcp/project/990f7c71-46f7-4843-8c6f-736f9e7a754e/streamable"
+        "sk-zy7FaHzn0nt7xyCsG5vtmtv95BM6wJ0p8RhhXOno3i0",
+        "http://localhost:7860/api/v1/mcp/project/15d03f81-3d6f-44ce-924d-728793ca3106/streamable"
       ]
     }
   }
