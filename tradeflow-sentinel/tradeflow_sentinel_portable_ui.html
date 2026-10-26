@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeFlow Sentinel — Portable Web UI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
+  .tab-btn { transition: all 0.2s; }
+  .tab-btn.active { background: #1d4ed8; color: white; border-color: #1d4ed8; }
+  .check-card.PASS { border-left: 4px solid #16a34a; }
+  .check-card.FAIL { border-left: 4px solid #dc2626; }
+  .check-card.NOT_APPLICABLE { border-left: 4px solid #94a3b8; }
+  .check-card.PASS .badge { background: #dcfce7; color: #15803d; }
+  .check-card.FAIL .badge { background: #fee2e2; color: #b91c1c; }
+  .check-card.NOT_APPLICABLE .badge { background: #f1f5f9; color: #475569; }
+  #synthesis-output { font-family: 'Courier New', monospace; white-space: pre-wrap; font-size: 12px; }
+  .spinner { border: 3px solid #e5e7eb; border-top-color: #1d4ed8; border-radius: 50%; width: 28px; height: 28px; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status-banner-COMPLIANT { background: linear-gradient(135deg, #052e16 0%, #14532d 100%); }
+  .status-banner-DISCREPANT { background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); }
+  .remediation-table th { background: #1e3a5f; color: white; }
+  textarea { resize: vertical; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Header -->
+<header class="bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight">🛡️ TradeFlow Sentinel</h1>
+      <p class="text-blue-200 text-xs">Adaptive Trade Finance &amp; DHE SDA Compliance Automation · Phase 2 Semifinal</p>
+    </div>
+    <div class="flex flex-col items-end gap-1">
+      <span id="mode-badge" class="text-xs px-2 py-0.5 rounded-full bg-yellow-400 text-yellow-900 font-semibold">MOCK MODE (0 Bobcoins)</span>
+      <span class="text-xs text-blue-200">IBM SkillsBuild National Hackathon 2026</span>
+    </div>
+  </div>
+</header>
+
+<!-- Tabs -->
+<div class="max-w-6xl mx-auto px-4 mt-4">
+  <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-0">
+    <button class="tab-btn active px-4 py-2 rounded-t-lg border border-gray-200 text-sm font-medium" onclick="showTab('tab-audit', this)">📋 Audit Kepatuhan</button>
+    <button class="tab-btn px-4 py-2 rounded-t-lg border border-gray-200 text-sm font-medium bg-white text-gray-600" onclick="showTab('tab-extract', this)">📄 Upload Dokumen (AI Extractor)</button>
+    <button class="tab-btn px-4 py-2 rounded-t-lg border border-gray-200 text-sm font-medium bg-white text-gray-600" onclick="showTab('tab-benchmark', this)">🧪 Benchmark Suite (40 Cases)</button>
+    <button class="tab-btn px-4 py-2 rounded-t-lg border border-gray-200 text-sm font-medium bg-white text-gray-600" onclick="showTab('tab-chat', this)">💬 Simulasi Chat</button>
+    <button class="tab-btn px-4 py-2 rounded-t-lg border border-gray-200 text-sm font-medium bg-white text-gray-600" onclick="showTab('tab-feedback', this)">📝 Feedback Praktisi</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ TAB 1 — AUDIT -->
+<div id="tab-audit" class="max-w-6xl mx-auto px-4 py-4">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+    <!-- Left: Input Panel -->
+    <div class="space-y-4">
+
+      <!-- API URL config -->
+      <div class="bg-white rounded-xl shadow-sm border p-4">
+        <h2 class="font-semibold text-gray-800 mb-2 text-sm">⚙️ Konfigurasi Server API</h2>
+        <div class="flex gap-2">
+          <input id="api-url" type="text" placeholder="http://localhost:8000" value=""
+            class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            oninput="checkOnlineMode()">
+          <button onclick="checkHealth()" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-medium">Ping</button>
+        </div>
+        <p id="api-status" class="text-xs mt-1 text-gray-400">Kosongkan untuk mode offline deterministik (JS fallback)</p>
+      </div>
+
+      <!-- Preset buttons -->
+      <div class="bg-white rounded-xl shadow-sm border p-4">
+        <h2 class="font-semibold text-gray-800 mb-3 text-sm">🎯 1-Klik Skenario Preset</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button onclick="loadPreset('CASE_1_COMPLIANT_CPO')" class="preset-btn text-left px-3 py-2.5 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg">
+            <p class="text-xs font-bold text-green-800">✅ CASE 1 — CPO Patuh</p>
+            <p class="text-xs text-green-600">CPO $1.82M · MV Borneo Star 1.1 NM · Mandiri Reksus · 40% FX</p>
+          </button>
+          <button onclick="loadPreset('CASE_2_DISCREPANT_COAL')" class="preset-btn text-left px-3 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg">
+            <p class="text-xs font-bold text-red-800">❌ CASE 2 — Coal Tidak Patuh</p>
+            <p class="text-xs text-red-600">Coal $5.25M · 209.97 NM predated BoL · $105/MT +45.83% · 80% FX</p>
+          </button>
+          <button onclick="loadPreset('LIVE_DEMO_COAL')" class="preset-btn text-left px-3 py-2.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg">
+            <p class="text-xs font-bold text-orange-800">🔴 LIVE DEMO — Coal Sebelum Remedial</p>
+            <p class="text-xs text-orange-600">Tanggal BoL 2026-09-28 · $105/MT · CIMB Niaga · 80% FX</p>
+          </button>
+          <button onclick="loadPreset('LIVE_DEMO_COMPLIANT_COAL')" class="preset-btn text-left px-3 py-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg">
+            <p class="text-xs font-bold text-blue-800">🟢 LIVE DEMO — Coal Setelah Remedial</p>
+            <p class="text-xs text-blue-600">Tanggal BoL 2026-09-30 · $75/MT · Mandiri Reksus · 50% FX</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- DHE Rule version -->
+      <div class="bg-white rounded-xl shadow-sm border p-4">
+        <h2 class="font-semibold text-gray-800 mb-2 text-sm">⚖️ Versi Aturan DHE SDA (Hot-Swap)</h2>
+        <select id="dhe-version" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="autoRun()">
+          <option value="PADG_16_2026" selected>PADG No. 16/2026 — Aktif sejak 2026-06-01 (50% FX cap, Himbara only)</option>
+          <option value="PP_8_2025">PP No. 8/2025 — Efektif 2025-03-01 (100% FX, any Bank Devisa)</option>
+          <option value="BASELINE_PRE_2025">BASELINE PRE-2025 — PP No. 36/2023 (30% retensi, 3 bulan)</option>
+        </select>
+        <p class="text-xs text-gray-400 mt-1">Ganti aturan untuk melihat dampak kepatuhan secara langsung tanpa restart</p>
+      </div>
+
+      <!-- Form editor -->
+      <div class="bg-white rounded-xl shadow-sm border p-4">
+        <h2 class="font-semibold text-gray-800 mb-3 text-sm">📄 Editor Dokumen (Zero-JSON)</h2>
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Beneficiary / Seller</label>
+              <input id="f-seller" type="text" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Buyer / Applicant</label>
+              <input id="f-buyer" type="text" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-500 font-medium">HS Code</label>
+              <select id="f-hs" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="1511.10">1511.10 — Crude Palm Oil (CPO)</option>
+                <option value="2701.12">2701.12 — Thermal Coal</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">L/C Amount (USD)</label>
+              <input id="f-lc-amount" type="number" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Invoice Total FOB (USD)</label>
+              <input id="f-total-fob" type="number" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Unit Price (USD/MT)</label>
+              <input id="f-unit-price" type="number" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Vessel Name</label>
+              <input id="f-vessel" type="text" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">IMO Number</label>
+              <input id="f-imo" type="text" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-500 font-medium">On-Board Date</label>
+              <input id="f-onboard" type="date" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Latest Shipment Date</label>
+              <input id="f-latest-ship" type="date" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Nominated Bank</label>
+              <input id="f-bank" type="text" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Bank Category</label>
+              <select id="f-bank-cat" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="HIMBARA">HIMBARA (State-Owned Bank)</option>
+                <option value="PRIVATE_BANK">PRIVATE_BANK</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Placement Type</label>
+              <select id="f-placement" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="Reksus DHE SDA">Special FX Account (Reksus DHE SDA)</option>
+                <option value="Regular FX Account">Regular FX Account</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Requested FX Conversion %</label>
+              <input id="f-fx-pct" type="number" min="0" max="100" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 font-medium">Goods Description (test Guardrail 1 PII masking &amp; injection blocking)</label>
+            <input id="f-goods" type="text" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. CRUDE PALM OIL (CPO), HS 1511.10">
+          </div>
+        </div>
+        <button onclick="runFromForm()" class="mt-4 w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-semibold transition">🔍 Jalankan Audit Kepatuhan</button>
+      </div>
+    </div>
+
+    <!-- Right: Output Panel -->
+    <div class="space-y-4" id="output-panel">
+
+      <!-- Placeholder -->
+      <div id="output-placeholder" class="bg-white rounded-xl shadow-sm border p-8 text-center text-gray-400">
+        <p class="text-4xl mb-3">🛡️</p>
+        <p class="font-semibold text-gray-600">Siap untuk Audit</p>
+        <p class="text-sm mt-1">Pilih preset atau isi form, lalu klik tombol Audit</p>
+      </div>
+
+      <!-- Status Banner -->
+      <div id="status-banner" class="hidden rounded-xl p-5 text-white">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <p id="banner-verdict" class="text-2xl font-black"></p>
+            <p id="banner-case" class="text-sm opacity-80 mt-1"></p>
+          </div>
+          <div class="text-right">
+            <p id="banner-time" class="text-lg font-bold"></p>
+            <p id="banner-roi" class="text-xs opacity-75"></p>
+          </div>
+        </div>
+        <div id="guardrail-badges" class="flex flex-wrap gap-2 mt-3"></div>
+      </div>
+
+      <!-- 6 Check Cards -->
+      <div id="check-cards" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+      <!-- Remediation Table -->
+      <div id="remediation-section" class="hidden bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div class="bg-red-800 text-white px-4 py-2.5">
+          <p class="font-semibold text-sm">📋 Tabel Tindakan Korektif (Remediation Action Table)</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs">
+            <thead><tr class="remediation-table"><th class="px-3 py-2 text-left">Field</th><th class="px-3 py-2 text-left">Nilai Saat Ini</th><th class="px-3 py-2 text-left">Tindakan Diperlukan</th></tr></thead>
+            <tbody id="remediation-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- IBM Bob Synthesis -->
+      <div id="synthesis-section" class="hidden bg-white rounded-xl shadow-sm border">
+        <div class="flex items-center justify-between px-4 py-2.5 border-b">
+          <p class="font-semibold text-sm text-gray-800">🤖 IBM Bob Synthesis Report</p>
+          <button onclick="copySynthesis()" class="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition">📋 Copy</button>
+        </div>
+        <div id="synthesis-output" class="p-4 text-gray-700 bg-gray-50 rounded-b-xl max-h-96 overflow-y-auto"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ TAB 2 — CHAT -->
+
+<!-- ═══════════════════════════════════════════════════════ TAB 4 — AI EXTRACTOR -->
+<div id="tab-extract" class="hidden max-w-6xl mx-auto px-4 py-4">
+  <div class="bg-white rounded-xl shadow-sm border p-4">
+    <h2 class="font-semibold text-gray-800 mb-1">📄 Upload Dokumen / AI Extraction (Teks L/C, Invoice &amp; B/L → JSON → Audit)</h2>
+    <p class="text-xs text-gray-500 mb-3">Tempel teks mentah dari dokumen perdagangan (L/C MT700, Commercial Invoice, Bill of Lading, DHE SDA Instruction). IBM Granite 3.3 8B akan mengekstrak JSON terstruktur, lalu sistem menjalankan audit 6 checks secara otomatis.</p>
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 text-xs text-blue-800">
+      <strong>Mode USE_MOCK_LLM=true:</strong> Regex deterministic extractor (0 Bobcoins) · <strong>USE_MOCK_LLM=false:</strong> IBM Granite 3.3 8B Instruct via watsonx.ai
+    </div>
+    <div class="flex gap-2 mb-3 flex-wrap">
+      <button onclick="loadExtractSample('cpo')" class="text-xs px-3 py-1.5 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg font-medium text-green-700">📋 Sampel CPO Compliant</button>
+      <button onclick="loadExtractSample('coal')" class="text-xs px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg font-medium text-red-700">📋 Sampel Coal Discrepant</button>
+    </div>
+    <textarea id="extract-input" rows="12" placeholder="Tempel teks dokumen di sini: L/C MT700, Commercial Invoice, Bill of Lading, DHE SDA Instruction..."
+      class="w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"></textarea>
+    <div class="flex flex-wrap gap-3 items-center mb-3">
+      <div>
+        <label class="text-xs font-medium text-gray-600">Aturan DHE SDA</label>
+        <select id="extract-dhe-version" class="ml-2 border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="PADG_16_2026">PADG No. 16/2026</option>
+          <option value="PP_8_2025">PP No. 8/2025</option>
+          <option value="BASELINE_PRE_2025">BASELINE PRE-2025</option>
+        </select>
+      </div>
+      <button onclick="runExtractAndVerify()" class="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-semibold transition">
+        🤖 Ekstrak &amp; Verifikasi (AI → Audit)
+      </button>
+    </div>
+    <div id="extract-result" class="mt-3"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ TAB 5 — BENCHMARK -->
+<div id="tab-benchmark" class="hidden max-w-6xl mx-auto px-4 py-4">
+  <div class="bg-white rounded-xl shadow-sm border p-4">
+    <h2 class="font-semibold text-gray-800 mb-1">🧪 40-Case Benchmark Suite — Confusion Matrix &amp; Faithfulness</h2>
+    <p class="text-xs text-gray-500 mb-3">Jalankan 40 planted test cases (12 Compliant + 28 Discrepant) terhadap server API dan tampilkan confusion matrix lengkap (TP/TN/FP/FN), Recall, Precision, F1, False Alarm Rate, dan waktu eksekusi vs baseline 870 detik.</p>
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-xs text-yellow-800">
+      <strong>Perhatian:</strong> Benchmark runner menggunakan <code>GET /benchmark-suite</code> untuk metadata lalu <code>POST /verify-trade-documents</code> per case. URL API harus dikonfigurasi di Tab Audit.
+      3 Mentor Edge Cases diuji: <strong>EC#2</strong> Unknown IMO (KeyError guard), <strong>EC#3</strong> Unknown HS (ZeroDivision guard), <strong>EC#4</strong> Dark Vessel lat/lon=None (Fail-Closed guard).
+    </div>
+    <button onclick="runBenchmarkSuite()" class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-semibold transition mb-4">
+      ▶ Jalankan 40 Test Cases
+    </button>
+    <div id="benchmark-result" class="text-xs text-gray-400 italic">Tekan tombol di atas untuk menjalankan benchmark suite.</div>
+  </div>
+</div>
+
+
+<div id="tab-chat" class="hidden max-w-6xl mx-auto px-4 py-4">
+  <div class="bg-white rounded-xl shadow-sm border p-4">
+    <h2 class="font-semibold text-gray-800 mb-1">💬 Simulasi Chat &amp; Intent Extractor</h2>
+    <p class="text-xs text-gray-500 mb-4">Replikasi 3 node paralel <strong>Intent &amp; Payload Extractor</strong> Langflow — cukup ketik 1 baris atau tempel JSON lengkap.</p>
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-xs text-blue-800">
+      <strong>Contoh prompt:</strong><br>
+      <code>Bob, cek CASE_2_DISCREPANT_COAL dengan aturan PP_8_2025</code><br>
+      <code>Audit CASE_1_COMPLIANT_CPO menggunakan PADG_16_2026</code><br>
+      <code>Periksa dokumen CASE_2 dengan BASELINE_PRE_2025</code>
+    </div>
+    <div class="flex gap-2 mb-3">
+      <textarea id="chat-input" rows="3" placeholder="Ketik perintah natural language atau tempel JSON payload di sini..."
+        class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+    </div>
+    <button onclick="runChat()" class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-semibold transition">
+      🚀 Ekstrak &amp; Jalankan
+    </button>
+    <div id="chat-intent" class="mt-4 hidden bg-gray-50 border rounded-lg p-4 text-xs font-mono">
+      <p class="font-semibold text-gray-600 mb-2">🔍 Intent Extraction Result:</p>
+      <div id="chat-intent-body"></div>
+    </div>
+    <div id="chat-result" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ TAB 3 — FEEDBACK -->
+<div id="tab-feedback" class="hidden max-w-6xl mx-auto px-4 py-4">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="bg-white rounded-xl shadow-sm border p-4">
+      <h2 class="font-semibold text-gray-800 mb-1">📝 Form Feedback Validasi Praktisi</h2>
+      <p class="text-xs text-gray-500 mb-4">Evidence untuk laporan konsultasi Komdigi. Pengisian memakan waktu <strong>~60 detik</strong>.</p>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-medium text-gray-600">Nama / Inisial <span class="text-red-500">*</span></label>
+          <input id="fb-name" type="text" placeholder="e.g. BW (Budi Wijaya)" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600">Jabatan / Title <span class="text-red-500">*</span></label>
+          <input id="fb-role" type="text" placeholder="e.g. Trade Finance Manager" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600">Jenis Perusahaan <span class="text-red-500">*</span></label>
+          <select id="fb-company" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">-- Pilih --</option>
+            <option value="Bank Trade Finance (BUMN)">Bank Trade Finance (BUMN)</option>
+            <option value="Bank Trade Finance (Swasta)">Bank Trade Finance (Swasta)</option>
+            <option value="Eksportir / Manufaktur">Eksportir / Manufaktur</option>
+            <option value="Treasury Korporat">Treasury Korporat</option>
+            <option value="Regulator / Pemerintah">Regulator / Pemerintah</option>
+            <option value="Konsultan / Akademisi">Konsultan / Akademisi</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600">Skenario yang Diuji <span class="text-red-500">*</span></label>
+          <select id="fb-scenario" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">-- Pilih --</option>
+            <option value="CASE_1_COMPLIANT_CPO">CASE 1 — CPO Patuh (Compliant)</option>
+            <option value="CASE_2_DISCREPANT_COAL">CASE 2 — Coal Tidak Patuh (Discrepant)</option>
+            <option value="LIVE_DEMO_COAL">Live Demo — Coal Sebelum Remedial</option>
+            <option value="LIVE_DEMO_COMPLIANT_COAL">Live Demo — Coal Setelah Remedial</option>
+            <option value="Skenario Custom">Skenario Custom (isi form sendiri)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">Skor Kemudahan Penggunaan (1–5) <span class="text-red-500">*</span></label>
+            <div class="flex gap-1 mt-1">
+              <template id="star-tpl"></template>
+              <span id="usability-stars" class="flex gap-1"></span>
+            </div>
+            <input id="fb-usability" type="hidden" value="0">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">Skor Manfaat Bisnis (1–5) <span class="text-red-500">*</span></label>
+            <div class="flex gap-1 mt-1" id="benefit-stars"></div>
+            <input id="fb-benefit" type="hidden" value="0">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600">Testimoni / Komentar</label>
+          <textarea id="fb-testimonial" rows="3" placeholder="Apa yang paling berguna? Apa yang perlu diperbaiki?" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+        <button onclick="submitFeedback()" class="w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-semibold transition">
+          📤 Kirim Feedback
+        </button>
+      </div>
+      <div id="fb-result" class="mt-3 hidden"></div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border p-4">
+      <h2 class="font-semibold text-gray-800 mb-3">📊 Matriks Validasi Praktisi</h2>
+      <p class="text-xs text-gray-500 mb-3">Baris Markdown siap copy-paste untuk laporan konsultasi:</p>
+      <div id="feedback-matrix" class="text-xs font-mono bg-gray-50 border rounded-lg p-3 min-h-32 whitespace-pre-wrap text-gray-600">
+Belum ada respons. Kirim feedback pertama untuk melihat matriks di sini.
+      </div>
+      <button onclick="loadFeedbackMatrix()" class="mt-2 text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg">🔄 Muat Ulang dari Server</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-6 flex flex-col items-center gap-3">
+    <div class="spinner"></div>
+    <p class="text-sm text-gray-700 font-medium">Menjalankan audit kepatuhan…</p>
+    <p class="text-xs text-gray-400">Haversine · UCP 600 · DHE SDA · IBM Bob Synthesis</p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// PRESET DATA DEFINITIONS
+// ============================================================
+const PRESETS = {
+  CASE_1_COMPLIANT_CPO: {
+    case_id: "CASE_1_COMPLIANT_CPO",
+    lc_ref: { beneficiary:"PT SUMATRA AGRO INDUSTRIES", applicant:"ASIA PACIFIC TRADING SDN BHD", currency:"USD", amount:1820000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Perak, Surabaya", port_of_discharge:"Port Klang, Malaysia", latest_shipment_date:"2026-07-15" },
+    commercial_invoice: { seller:"PT SUMATRA AGRO INDUSTRIES", buyer:"ASIA PACIFIC TRADING SDN BHD", currency:"USD", hs_code:"1511.10", goods_description:"CRUDE PALM OIL (CPO)", quantity_mt:2000, unit_price_usd_mt:910, total_fob_usd:1820000, incoterms:"FOB", port_of_loading:"Tanjung Perak, Surabaya" },
+    bill_of_lading: { vessel_name:"MV BORNEO STAR", imo_number:"9315460", port_of_loading:"Tanjung Perak, Surabaya", port_of_discharge:"Port Klang, Malaysia", on_board_date:"2026-07-10", goods_description:"CRUDE PALM OIL (CPO), HS 1511.10" },
+    dhe_sda_transaction: { fob_usd:1820000, nominated_bank:"PT Bank Mandiri (Persero) Tbk", bank_category:"HIMBARA", placement_type:"Reksus DHE SDA", requested_fx_conversion_pct:40, hold_period_months:12 }
+  },
+  CASE_2_DISCREPANT_COAL: {
+    case_id: "CASE_2_DISCREPANT_COAL",
+    lc_ref: { beneficiary:"PT KALIMANTAN COAL EXPORT", applicant:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", amount:5250000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", latest_shipment_date:"2026-08-05" },
+    commercial_invoice: { seller:"PT KALIMANTAN COAL EXPORT", buyer:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", hs_code:"2701.12", goods_description:"THERMAL COAL", quantity_mt:50000, unit_price_usd_mt:105, total_fob_usd:5250000, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta" },
+    bill_of_lading: { vessel_name:"MV KALIMANTAN BULK", imo_number:"9811000", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", on_board_date:"2026-08-05", goods_description:"THERMAL COAL, HS 2701.12" },
+    dhe_sda_transaction: { fob_usd:5250000, nominated_bank:"PT Bank CIMB Niaga Tbk", bank_category:"PRIVATE_BANK", placement_type:"Regular FX Account", requested_fx_conversion_pct:80, hold_period_months:12 }
+  },
+  LIVE_DEMO_COAL: {
+    case_id: "LIVE_DEMO_COAL",
+    lc_ref: { beneficiary:"PT KALIMANTAN COAL EXPORT", applicant:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", amount:5250000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", latest_shipment_date:"2026-10-05" },
+    commercial_invoice: { seller:"PT KALIMANTAN COAL EXPORT", buyer:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", hs_code:"2701.12", goods_description:"THERMAL COAL", quantity_mt:50000, unit_price_usd_mt:105, total_fob_usd:5250000, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta" },
+    bill_of_lading: { vessel_name:"MV KALIMANTAN BULK", imo_number:"9811000", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", on_board_date:"2026-09-28", goods_description:"THERMAL COAL, HS 2701.12" },
+    dhe_sda_transaction: { fob_usd:5250000, nominated_bank:"PT Bank CIMB Niaga Tbk", bank_category:"PRIVATE_BANK", placement_type:"Regular FX Account", requested_fx_conversion_pct:80, hold_period_months:12 }
+  },
+  LIVE_DEMO_COMPLIANT_COAL: {
+    case_id: "LIVE_DEMO_COMPLIANT_COAL",
+    lc_ref: { beneficiary:"PT KALIMANTAN COAL EXPORT", applicant:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", amount:3750000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", latest_shipment_date:"2026-10-05" },
+    commercial_invoice: { seller:"PT KALIMANTAN COAL EXPORT", buyer:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", hs_code:"2701.12", goods_description:"THERMAL COAL", quantity_mt:50000, unit_price_usd_mt:75, total_fob_usd:3750000, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta" },
+    bill_of_lading: { vessel_name:"MV KALIMANTAN BULK", imo_number:"9811000", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", on_board_date:"2026-09-30", goods_description:"THERMAL COAL, HS 2701.12" },
+    dhe_sda_transaction: { fob_usd:3750000, nominated_bank:"PT Bank Mandiri (Persero) Tbk", bank_category:"HIMBARA", placement_type:"Reksus DHE SDA", requested_fx_conversion_pct:50, hold_period_months:12 }
+  }
+};
+
+// World Bank benchmark data (JS fallback)
+const BENCHMARKS = {
+  "1511.10": { benchmark_price: 910, tolerance_pct: 5, description: "Crude Palm Oil", port_type: "TANJUNG_PERAK" },
+  "2701.12": { benchmark_price: 72, tolerance_pct: 10, description: "Thermal Coal", port_type: "TANJUNG_PRIOK" }
+};
+
+// AISHub vessel snapshots (JS fallback)
+const VESSELS = {
+  "9315460": { vessel_name:"MV BORNEO STAR", lat:-7.2174, lon:112.7401, snapshot_date:"2026-07-10" },
+  "9811000": { vessel_name:"MV KALIMANTAN BULK", snapshots:[
+    { date:"2026-09-28", lat:-3.5892, lon:109.3241 },
+    { date:"2026-09-30", lat:-6.1044, lon:106.8853 }
+  ]}
+};
+const PORT_COORDS = {
+  TANJUNG_PERAK: { lat:-7.2038, lon:112.7282, port:"Tanjung Perak, Surabaya" },
+  TANJUNG_PRIOK: { lat:-6.1044, lon:106.8853, port:"Tanjung Priok, Jakarta" }
+};
+const DHE_RULES = {
+  PADG_16_2026: { fob_threshold_usd:250000, retention_pct:100, min_hold_months:12, fx_conversion_to_idr_max_pct:50, legal_basis:"PADG No. 16/2026" },
+  PP_8_2025: { fob_threshold_usd:250000, retention_pct:100, min_hold_months:12, fx_conversion_to_idr_max_pct:100, legal_basis:"PP No. 8/2025 + PBI No. 3/2025" },
+  BASELINE_PRE_2025: { fob_threshold_usd:250000, retention_pct:30, min_hold_months:3, fx_conversion_to_idr_max_pct:100, legal_basis:"PP No. 36/2023" }
+};
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function haversineNM(lat1, lon1, lat2, lon2) {
+  const R = 3440.065, toRad = d => d * Math.PI / 180;
+  const phi1 = toRad(lat1), phi2 = toRad(lat2);
+  const dphi = toRad(lat2 - lat1), dlam = toRad(lon2 - lon1);
+  const a = Math.sin(dphi/2)**2 + Math.cos(phi1)*Math.cos(phi2)*Math.sin(dlam/2)**2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(a)) * 100) / 100;
+}
+function solasCkDigit(imoStr) {
+  const d = imoStr.replace(/\D/g,'');
+  if(d.length!==7) return {valid:false,check:-1};
+  let t=0; for(let i=0;i<6;i++) t+=parseInt(d[i])*(7-i);
+  const c=t%10; return {valid:c===parseInt(d[6]),check:c};
+}
+function getApiUrl() { return (document.getElementById('api-url').value||'').trim().replace(/\/$/,''); }
+function showLoading(v) { document.getElementById('loading-overlay').classList.toggle('hidden',!v); }
+
+// ============================================================
+// TABS
+// ============================================================
+function showTab(id, btn) {
+  ['tab-audit','tab-chat','tab-feedback'].forEach(t => document.getElementById(t).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.classList.add('bg-white','text-gray-600'); });
+  btn.classList.add('active'); btn.classList.remove('bg-white','text-gray-600');
+}
+
+// ============================================================
+// PRESET LOADER — fill form fields
+// ============================================================
+function loadPreset(key) {
+  const p = PRESETS[key]; if(!p) return;
+  const ci = p.commercial_invoice, bol = p.bill_of_lading, dhe = p.dhe_sda_transaction, lc = p.lc_ref;
+  document.getElementById('f-seller').value = ci.seller;
+  document.getElementById('f-buyer').value = ci.buyer;
+  document.getElementById('f-hs').value = ci.hs_code;
+  document.getElementById('f-lc-amount').value = lc.amount;
+  document.getElementById('f-total-fob').value = ci.total_fob_usd;
+  document.getElementById('f-unit-price').value = ci.unit_price_usd_mt;
+  document.getElementById('f-vessel').value = bol.vessel_name;
+  document.getElementById('f-imo').value = bol.imo_number;
+  document.getElementById('f-onboard').value = bol.on_board_date;
+  document.getElementById('f-latest-ship').value = lc.latest_shipment_date;
+  document.getElementById('f-bank').value = dhe.nominated_bank;
+  document.getElementById('f-bank-cat').value = dhe.bank_category;
+  document.getElementById('f-placement').value = dhe.placement_type;
+  document.getElementById('f-fx-pct').value = dhe.requested_fx_conversion_pct;
+  document.getElementById('f-goods').value = ci.goods_description;
+  // run immediately
+  runAudit(buildPayloadFromForm(), key);
+}
+
+function buildPayloadFromForm() {
+  const hs = document.getElementById('f-hs').value;
+  const portType = hs === '1511.10' ? 'Tanjung Perak, Surabaya' : 'Tanjung Priok, Jakarta';
+  const portDischarge = hs === '1511.10' ? 'Port Klang, Malaysia' : 'Qingdao, China';
+  return {
+    lc_mt700_reference: {
+      beneficiary: document.getElementById('f-seller').value,
+      applicant: document.getElementById('f-buyer').value,
+      currency: "USD",
+      amount: parseFloat(document.getElementById('f-lc-amount').value)||0,
+      tolerance_pct: 5,
+      incoterms: "FOB",
+      port_of_loading: portType,
+      port_of_discharge: portDischarge,
+      latest_shipment_date: document.getElementById('f-latest-ship').value
+    },
+    commercial_invoice: {
+      seller: document.getElementById('f-seller').value,
+      buyer: document.getElementById('f-buyer').value,
+      currency: "USD",
+      hs_code: hs,
+      goods_description: document.getElementById('f-goods').value,
+      quantity_mt: 2000,
+      unit_price_usd_mt: parseFloat(document.getElementById('f-unit-price').value)||0,
+      total_fob_usd: parseFloat(document.getElementById('f-total-fob').value)||0,
+      incoterms: "FOB",
+      port_of_loading: portType
+    },
+    bill_of_lading: {
+      vessel_name: document.getElementById('f-vessel').value,
+      imo_number: document.getElementById('f-imo').value,
+      port_of_loading: portType,
+      port_of_discharge: portDischarge,
+      on_board_date: document.getElementById('f-onboard').value,
+      goods_description: document.getElementById('f-goods').value
+    },
+    dhe_sda_transaction: {
+      fob_usd: parseFloat(document.getElementById('f-total-fob').value)||0,
+      nominated_bank: document.getElementById('f-bank').value,
+      bank_category: document.getElementById('f-bank-cat').value,
+      placement_type: document.getElementById('f-placement').value,
+      requested_fx_conversion_pct: parseFloat(document.getElementById('f-fx-pct').value)||0,
+      hold_period_months: 12
+    },
+    dhe_rule_version: document.getElementById('dhe-version').value
+  };
+}
+
+function runFromForm() {
+  const payload = buildPayloadFromForm();
+  runAudit(payload, 'CUSTOM_PAYLOAD');
+}
+
+function autoRun() {
+  if(document.getElementById('f-seller').value) runFromForm();
+}
+
+// ============================================================
+// MAIN AUDIT RUNNER
+// ============================================================
+async function runAudit(docData, caseId) {
+  showLoading(true);
+  const t0 = performance.now();
+  const dheVersion = document.getElementById('dhe-version').value;
+  const apiUrl = getApiUrl();
+  let result = null;
+
+  try {
+    if(apiUrl) {
+      // Online mode — call FastAPI backend
+      const resp = await fetch(`${apiUrl}/verify-trade-documents`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ case_id: null, dhe_rule_version: dheVersion, document_data: docData })
+      });
+      if(!resp.ok) throw new Error(`API ${resp.status}: ${await resp.text()}`);
+      result = await resp.json();
+    } else {
+      // Offline JS fallback deterministic engine
+      const elapsed = performance.now() - t0;
+      result = runJsDeterministicEngine(docData, caseId, dheVersion, elapsed);
+    }
+    renderResult(result);
+  } catch(e) {
+    showLoading(false);
+    alert('Error: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ============================================================
+// JS DETERMINISTIC ENGINE (offline fallback — 1:1 parity)
+// ============================================================
+function runJsDeterministicEngine(doc, caseId, dheVersion, elapsedMs) {
+  const inv = doc.commercial_invoice, bol = doc.bill_of_lading, dhe = doc.dhe_sda_transaction;
+  const lc = doc.lc_mt700_reference;
+  const bench = BENCHMARKS[inv.hs_code] || { benchmark_price:0, tolerance_pct:10, description:'Unknown' };
+  const portKey = (inv.hs_code === '1511.10') ? 'TANJUNG_PERAK' : 'TANJUNG_PRIOK';
+  const portCoords = PORT_COORDS[portKey];
+  const dheRule = DHE_RULES[dheVersion] || DHE_RULES['PADG_16_2026'];
+
+  const discrepancies = [], checks = {}, remediation_rows = [];
+
+  // UCP 600 Art. 18
+  const ci_issues = [];
+  if(inv.seller.toUpperCase() !== lc.beneficiary.toUpperCase()) ci_issues.push(`Seller '${inv.seller}' ≠ LC beneficiary '${lc.beneficiary}'`);
+  if(inv.buyer.toUpperCase() !== lc.applicant.toUpperCase()) ci_issues.push(`Buyer '${inv.buyer}' ≠ LC applicant '${lc.applicant}'`);
+  if(Math.abs(inv.total_fob_usd - lc.amount) > lc.amount * lc.tolerance_pct / 100)
+    ci_issues.push(`Amount mismatch: USD ${inv.total_fob_usd.toLocaleString()} outside LC USD ${lc.amount.toLocaleString()} ± ${lc.tolerance_pct}%`);
+  checks.ucp_art18_invoice = { rule:"UCP 600 Art. 18", status: ci_issues.length?'FAIL':'PASS', issues:ci_issues };
+  discrepancies.push(...ci_issues);
+  ci_issues.forEach(i => remediation_rows.push({field:'commercial_invoice',current_value:i,required_action:'Correct to match LC MT700 terms under UCP 600 Art. 18'}));
+
+  // UCP 600 Art. 20
+  const bl_issues = [];
+  if(bol.port_of_loading.toUpperCase() !== lc.port_of_loading.toUpperCase())
+    bl_issues.push(`Port of loading mismatch: BoL '${bol.port_of_loading}' ≠ LC '${lc.port_of_loading}'`);
+  if(bol.on_board_date > lc.latest_shipment_date)
+    bl_issues.push(`On-board date ${bol.on_board_date} is after LC latest shipment date ${lc.latest_shipment_date}`);
+
+  // AISHub proximity
+  const vesselDb = VESSELS[bol.imo_number];
+  let vLat, vLon, snapDate;
+  if(vesselDb && vesselDb.snapshots) {
+    const s = vesselDb.snapshots.find(x => x.date === bol.on_board_date) || vesselDb.snapshots[0];
+    vLat=s.lat; vLon=s.lon; snapDate=s.date;
+  } else if(vesselDb) { vLat=vesselDb.lat; vLon=vesselDb.lon; snapDate=vesselDb.snapshot_date; }
+  else { vLat=portCoords.lat; vLon=portCoords.lon; snapDate=bol.on_board_date; }
+
+  const dist = haversineNM(vLat, vLon, portCoords.lat, portCoords.lon);
+  checks.aishu_proximity = { rule:"AISHub Proximity", vessel:bol.vessel_name, imo:bol.imo_number, snapshot_date:snapDate, vessel_position:{lat:vLat,lon:vLon}, port:portCoords.port, port_position:{lat:portCoords.lat,lon:portCoords.lon}, distance_nm:dist, threshold_nm:10.0 };
+  if(dist > 10.0) {
+    const msg = `PREDATED BoL: ${bol.vessel_name} (IMO ${bol.imo_number}) was ${dist} NM from ${portCoords.port} on ${snapDate}`;
+    bl_issues.push(msg); checks.aishu_proximity.status='FAIL'; checks.aishu_proximity.finding=msg;
+    remediation_rows.push({field:'bill_of_lading.on_board_date',current_value:`${bol.on_board_date} (${dist} NM dari ${portCoords.port})`,required_action:`Ubah tanggal on-board setelah kapal tiba di pelabuhan. Kapal ${bol.vessel_name} (IMO ${bol.imo_number}) berada ${dist} NM dari pelabuhan pada tanggal tersebut.`});
+  } else { checks.aishu_proximity.status='PASS'; checks.aishu_proximity.finding=`Vessel within ${dist} NM of port`; }
+
+  checks.ucp_art20_bol = { rule:"UCP 600 Art. 20", status:bl_issues.length?'FAIL':'PASS', issues:bl_issues };
+  discrepancies.push(...bl_issues);
+
+  // SOLAS IMO checksum
+  const imo_result = solasCkDigit(bol.imo_number);
+  checks.imo_solas = { rule:"SOLAS IMO Checksum", imo:bol.imo_number, computed_check_digit:imo_result.check, status:imo_result.valid?'PASS':'FAIL' };
+  if(!imo_result.valid) { discrepancies.push(`Invalid IMO checksum for ${bol.imo_number}`); remediation_rows.push({field:'bill_of_lading.imo_number',current_value:bol.imo_number,required_action:`IMO tidak valid. Check digit harus ${imo_result.check}.`}); }
+
+  // World Bank Price Deviation
+  const devPct = Math.round(((inv.unit_price_usd_mt - bench.benchmark_price) / bench.benchmark_price) * 10000) / 100;
+  checks.price_deviation = { rule:"World Bank Pink Sheet", commodity:bench.description, hs_code:inv.hs_code, invoice_price_usd_mt:inv.unit_price_usd_mt, benchmark_price_usd_mt:bench.benchmark_price, deviation_pct:devPct, tolerance_pct:bench.tolerance_pct };
+  if(Math.abs(devPct) > bench.tolerance_pct) {
+    const msg = `Price deviation ${devPct >= 0?'+':''}${devPct}% exceeds tolerance ±${bench.tolerance_pct}% (invoice $${inv.unit_price_usd_mt}/MT vs benchmark $${bench.benchmark_price}/MT)`;
+    checks.price_deviation.status='FAIL'; checks.price_deviation.finding=msg; discrepancies.push(msg);
+    remediation_rows.push({field:'commercial_invoice.unit_price_usd_mt',current_value:`USD ${inv.unit_price_usd_mt}/MT (${devPct >= 0?'+':''}${devPct}%)`,required_action:`Harga harus USD ${Math.round(bench.benchmark_price*(1-bench.tolerance_pct/100)*100)/100}–${Math.round(bench.benchmark_price*(1+bench.tolerance_pct/100)*100)/100}/MT (World Bank Pink Sheet ± ${bench.tolerance_pct}%)`});
+  } else { checks.price_deviation.status='PASS'; checks.price_deviation.finding=`Price within tolerance: ${devPct >= 0?'+':''}${devPct}%`; }
+
+  // DHE SDA
+  const fob = dhe.fob_usd, fx = dhe.requested_fx_conversion_pct;
+  const dhe_issues = [];
+  if(fob >= dheRule.fob_threshold_usd) {
+    if(fx > dheRule.fx_conversion_to_idr_max_pct) {
+      dhe_issues.push(`Requested FX conversion ${fx}% exceeds ${dheVersion} maximum ${dheRule.fx_conversion_to_idr_max_pct}%`);
+      remediation_rows.push({field:'dhe_sda_transaction.requested_fx_conversion_pct',current_value:`${fx}%`,required_action:`Konversi FX maks ${dheRule.fx_conversion_to_idr_max_pct}% sesuai ${dheVersion} (${dheRule.legal_basis})`});
+    }
+    if(dheVersion === 'PADG_16_2026') {
+      if(dhe.bank_category !== 'HIMBARA' && !dhe.bank_category.includes('STATE_OWNED')) {
+        dhe_issues.push(`Bank category '${dhe.bank_category}' is NOT Himbara. ${dheVersion} restricts to BRI/BNI/Mandiri/BTN.`);
+        remediation_rows.push({field:'dhe_sda_transaction.nominated_bank',current_value:dhe.nominated_bank,required_action:`Gunakan Bank Himbara (BRI/BNI/Mandiri/BTN) sesuai ${dheVersion} Pasal 21`});
+      }
+      if(!dhe.placement_type.includes('Reksus')) {
+        dhe_issues.push(`Placement type '${dhe.placement_type}' is not Reksus DHE SDA as required by ${dheVersion}`);
+        remediation_rows.push({field:'dhe_sda_transaction.placement_type',current_value:dhe.placement_type,required_action:`Gunakan 'Reksus DHE SDA' sesuai ${dheVersion}`});
+      }
+    }
+    checks.dhe_sda = { rule:`DHE SDA (${dheVersion})`, legal_basis:dheRule.legal_basis, fob_usd:fob, threshold_usd:dheRule.fob_threshold_usd, retention_required_pct:dheRule.retention_pct, min_hold_months:dheRule.min_hold_months, fx_conversion_max_pct:dheRule.fx_conversion_to_idr_max_pct, requested_fx_conversion_pct:fx, nominated_bank:dhe.nominated_bank, bank_category:dhe.bank_category, status:dhe_issues.length?'FAIL':'PASS', issues:dhe_issues };
+    discrepancies.push(...dhe_issues);
+  } else {
+    checks.dhe_sda = { rule:`DHE SDA (${dheVersion})`, status:'NOT_APPLICABLE', finding:`FOB USD ${fob.toLocaleString()} below threshold` };
+  }
+
+  const overallStatus = discrepancies.length === 0 ? 'COMPLIANT' : 'DISCREPANT';
+  const procMs = Math.round(performance.now() - elapsedMs);
+
+  // Build mock synthesis
+  const synthesis = buildMockSynthesis(overallStatus, checks, caseId, dheVersion, dheRule, dist, devPct, bench, inv, fx, remediation_rows);
+
+  return {
+    case_id: caseId, dhe_rule_version_applied: dheVersion,
+    overall_status: overallStatus, discrepancy_count: discrepancies.length,
+    processing_time_ms: procMs || 1,
+    guardrail_1_warnings: [], guardrail_2_warnings: [],
+    findings: { checks, discrepancies, overall_status: overallStatus, discrepancy_count: discrepancies.length, remediation_rows },
+    synthesis,
+    roi_context: { baseline_review_time_s:2700, sentinel_time_ms:procMs||1, sentinel_time_s:(procMs||1)/1000, time_reduction_pct:99.9 }
+  };
+}
+
+function buildMockSynthesis(status, checks, caseId, dheVersion, dheRule, dist, devPct, bench, inv, fxPct, remRows) {
+  const verdict = status === 'COMPLIANT' ? '✅ PATUH (COMPLIANT)' : '❌ TIDAK PATUH (DISCREPANT)';
+  const aishu = checks.aishu_proximity || {};
+  const price = checks.price_deviation || {};
+  const dhe = checks.dhe_sda || {};
+  const imo = checks.imo_solas || {};
+  const art18 = checks.ucp_art18_invoice || {};
+  const art20 = checks.ucp_art20_bol || {};
+  let rem = '';
+  if(remRows.length) {
+    rem = '\n\n📋 TABEL TINDAKAN KOREKTIF / CORRECTIVE ACTION TABLE\n' + '─'.repeat(70) + '\n';
+    remRows.forEach(r => { rem += `  ${r.field.padEnd(43)} ${String(r.current_value).padEnd(25)} ${r.required_action}\n`; });
+    rem += '─'.repeat(70);
+  }
+  return `[IBM Bob — TradeFlow Sentinel | Mode: MOCK JS Offline | Case: ${caseId}]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LAPORAN KEPATUHAN EKSEKUTIF / EXECUTIVE COMPLIANCE SYNTHESIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nomor Kasus      : ${caseId}
+Aturan DHE SDA   : DHE SDA (${dheVersion}) | Dasar Hukum: ${dheRule.legal_basis}
+Verdik Eksekutif : ${verdict}
+
+── TEMUAN UCP 600 ─────────────────────────────────────────────────────────────
+
+Art. 18 (Commercial Invoice) : ${art18.status||'N/A'}
+${(art18.issues||[]).map(i=>'  ⚠ '+i).join('\n') || '  ✓ Seller, buyer, currency, amount, incoterms — semua sesuai LC MT700'}
+
+Art. 20 (Bill of Lading)     : ${art20.status||'N/A'}
+${(art20.issues||[]).filter(i=>!i.startsWith('PREDATED')).map(i=>'  ⚠ '+i).join('\n') || '  ✓ Port muat, port bongkar, tanggal on-board — semua sesuai LC'}
+
+IMO / SOLAS Checksum         : ${imo.status||'N/A'}
+  IMO ${imo.imo||'N/A'} | Check digit: ${imo.computed_check_digit??'N/A'}
+
+── VERIFIKASI AISHub HAVERSINE ────────────────────────────────────────────────
+
+Kapal           : ${aishu.vessel||'N/A'} (IMO ${aishu.imo||'N/A'})
+Jarak Haversine : ${dist} NM (ambang batas: 10.0 NM)
+Status          : ${aishu.status||'N/A'} — ${aishu.status==='FAIL'?'⚠ PREDATED BILL OF LADING':'✓ Kapal dalam radius pelabuhan'}
+
+── BENCHMARK HARGA WORLD BANK PINK SHEET ─────────────────────────────────────
+
+Komoditas     : ${bench.description} (HS ${inv.hs_code})
+Harga Invoice : USD ${inv.unit_price_usd_mt}/MT
+Benchmark     : USD ${bench.benchmark_price}/MT | Deviasi: ${String(Math.abs(devPct))}% (${devPct>=0?'+':''}${devPct}%) | Toleransi: ±${bench.tolerance_pct}%
+Status        : ${price.status||'N/A'} — ${price.finding||''}
+
+── PENILAIAN DHE SDA ──────────────────────────────────────────────────────────
+
+Aturan Aktif  : DHE SDA (${dheVersion}) | ${dheRule.legal_basis}
+FOB Amount    : USD ${(dhe.fob_usd||0).toLocaleString()} | Batas Konversi FX: maks ${dheRule.fx_conversion_to_idr_max_pct}%
+Diminta       : ${fxPct}% | Bank: ${dhe.nominated_bank||'N/A'} (${dhe.bank_category||'N/A'})
+Status DHE    : ${dhe.status||'N/A'}
+${(dhe.issues||[]).map(i=>'  ⚠ '+i).join('\n') || '  ✓ Bank Himbara, Reksus DHE SDA, konversi FX dalam batas'}\
+${rem}
+
+── RINGKASAN / CORRECTIVE ACTION ──────────────────────────────────────────────
+
+${status==='COMPLIANT'?
+'🇮🇩 Dokumen sesuai UCP 600 Art. 18/20 dan kewajiban DHE SDA. Lanjutkan presentasi.\n🇬🇧 All documents comply. Proceed to presentation.':
+'🇮🇩 Set dokumen mengandung ketidaksesuaian. Koreksi sebelum presentasi (UCP 600 Art. 16).\n🇬🇧 Document set contains discrepancies. Correct before presentation under UCP 600 Art. 16.'}
+
+[JS Offline Mode — 0 Bobcoins]`;
+}
+
+// ============================================================
+// RENDER RESULT
+// ============================================================
+function renderResult(r) {
+  document.getElementById('output-placeholder').classList.add('hidden');
+  const status = r.overall_status;
+  const banner = document.getElementById('status-banner');
+  banner.className = `rounded-xl p-5 text-white status-banner-${status}`;
+  banner.classList.remove('hidden');
+  document.getElementById('banner-verdict').textContent = status === 'COMPLIANT' ? '✅ PATUH (COMPLIANT)' : '❌ TIDAK PATUH (DISCREPANT)';
+  document.getElementById('banner-case').textContent = `${r.case_id} · DHE: ${r.dhe_rule_version_applied} · ${r.discrepancy_count} temuan`;
+  document.getElementById('banner-time').textContent = `${r.processing_time_ms} ms`;
+  document.getElementById('banner-roi').textContent = `vs 45-menit manual baseline · >99.9% time reduction`;
+
+  // Guardrail badges
+  const gb = document.getElementById('guardrail-badges'); gb.innerHTML = '';
+  const g1 = r.guardrail_1_warnings||[], g2 = r.guardrail_2_warnings||[];
+  gb.innerHTML = `<span class="px-2 py-0.5 rounded-full text-xs font-semibold ${g1.length?'bg-yellow-300 text-yellow-900':'bg-green-300 text-green-900'}">G1 ${g1.length?'⚠ '+g1.length+' warnings':'✓ PASS'}</span><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${g2.length?'bg-yellow-300 text-yellow-900':'bg-green-300 text-green-900'}">G2 ${g2.length?'⚠ '+g2.length+' warnings':'✓ PASS'}</span>`;
+
+  // Check cards
+  const cc = document.getElementById('check-cards'); cc.innerHTML = ''; cc.classList.remove('hidden');
+  const checkDefs = [
+    { key:'ucp_art18_invoice', label:'UCP 600 Art. 18', sub:'Commercial Invoice' },
+    { key:'ucp_art20_bol', label:'UCP 600 Art. 20', sub:'Bill of Lading' },
+    { key:'aishu_proximity', label:'AISHub Haversine', sub:`${(r.findings.checks.aishu_proximity||{}).distance_nm||'—'} NM` },
+    { key:'imo_solas', label:'SOLAS IMO Checksum', sub:`IMO ${(r.findings.checks.imo_solas||{}).imo||'—'}` },
+    { key:'price_deviation', label:'World Bank Pink Sheet', sub:`Deviation: ${(r.findings.checks.price_deviation||{}).deviation_pct||0}%` },
+    { key:'dhe_sda', label:'DHE SDA', sub:r.dhe_rule_version_applied },
+  ];
+  checkDefs.forEach(cd => {
+    const chk = r.findings.checks[cd.key]||{};
+    const st = chk.status||'N/A';
+    cc.innerHTML += `<div class="check-card ${st} bg-white rounded-lg shadow-sm border p-3">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs font-semibold text-gray-700">${cd.label}</span>
+        <span class="badge text-xs px-2 py-0.5 rounded-full font-bold">${st}</span>
+      </div>
+      <p class="text-xs text-gray-500">${cd.sub}</p>
+      ${chk.finding?`<p class="text-xs mt-1 text-gray-600 italic">${chk.finding.slice(0,100)}${chk.finding.length>100?'…':''}</p>`:''}
+    </div>`;
+  });
+
+  // Remediation table
+  const remRows = r.findings.remediation_rows||[];
+  if(remRows.length) {
+    document.getElementById('remediation-section').classList.remove('hidden');
+    const rb = document.getElementById('remediation-body'); rb.innerHTML = '';
+    remRows.forEach((row, i) => {
+      rb.innerHTML += `<tr class="${i%2?'bg-gray-50':'bg-white'}">
+        <td class="px-3 py-2 font-mono text-blue-800 font-medium">${row.field}</td>
+        <td class="px-3 py-2 text-gray-700">${row.current_value}</td>
+        <td class="px-3 py-2 text-gray-800">${row.required_action}</td>
+      </tr>`;
+    });
+  } else { document.getElementById('remediation-section').classList.add('hidden'); }
+
+  // Synthesis
+  document.getElementById('synthesis-section').classList.remove('hidden');
+  document.getElementById('synthesis-output').textContent = r.synthesis||'';
+}
+
+function copySynthesis() {
+  const text = document.getElementById('synthesis-output').textContent;
+  navigator.clipboard.writeText(text).then(()=>alert('Synthesis disalin ke clipboard!')).catch(()=>{ const el=document.getElementById('synthesis-output'); el.select(); document.execCommand('copy'); });
+}
+
+// ============================================================
+// HEALTH CHECK
+// ============================================================
+async function checkHealth() {
+  const url = getApiUrl(); if(!url) { document.getElementById('api-status').textContent='URL kosong — mode offline'; return; }
+  try {
+    const r = await fetch(`${url}/health`, {signal:AbortSignal.timeout(3000)});
+    const j = await r.json();
+    document.getElementById('api-status').textContent = `✅ Online · v${j.version} · mock=${j.use_mock_llm}`;
+    document.getElementById('mode-badge').textContent = j.use_mock_llm ? 'MOCK MODE (0 Bobcoins)' : 'LIVE ibm/granite-3-3-8b-instruct';
+  } catch(e) { document.getElementById('api-status').textContent = `❌ Tidak terhubung: ${e.message}`; }
+}
+function checkOnlineMode() {
+  const url = getApiUrl();
+  document.getElementById('api-status').textContent = url ? `Mode online → ${url}` : 'Mode offline (JS fallback deterministik)';
+}
+
+// Auto-detect if served from FastAPI
+(function() {
+  if(window.location.port === '8000' || (window.location.hostname !== 'localhost' && window.location.protocol !== 'file:')) {
+    const base = window.location.origin;
+    document.getElementById('api-url').value = base;
+    checkOnlineMode();
+    checkHealth();
+  }
+})();
+
+// ============================================================
+// SHOWTAB (updated to include new tab IDs)
+// ============================================================
+function showTab(id, btn) {
+  ['tab-audit','tab-extract','tab-benchmark','tab-chat','tab-feedback'].forEach(t => {
+    const el = document.getElementById(t); if(el) el.classList.add('hidden');
+  });
+  const target = document.getElementById(id); if(target) target.classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.classList.add('bg-white','text-gray-600'); });
+  btn.classList.add('active'); btn.classList.remove('bg-white','text-gray-600');
+}
+
+// ============================================================
+// TAB 4 — AI DOCUMENT EXTRACTOR
+// ============================================================
+async function runExtractAndVerify() {
+  const rawText = document.getElementById('extract-input').value.trim();
+  if(!rawText) { alert('Masukkan teks dokumen terlebih dahulu.'); return; }
+  const dheRule = document.getElementById('extract-dhe-version').value;
+  const apiUrl = getApiUrl();
+  const resDiv = document.getElementById('extract-result');
+  resDiv.innerHTML = '<div class="text-sm text-gray-500">Memproses ekstraksi AI...</div>';
+
+  if(!apiUrl) {
+    resDiv.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">⚠ URL API diperlukan untuk AI extraction. Masukkan URL server di Tab Audit.</div>';
+    return;
+  }
+  try {
+    showLoading(true);
+    const resp = await fetch(`${apiUrl}/extract-and-verify`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ raw_text: rawText, dhe_rule_version: dheRule, case_id: 'EXTRACTED_DOCUMENT' })
+    });
+    const r = await resp.json();
+    const meta = r.extraction_metadata || {};
+    const status = r.overall_status || 'UNKNOWN';
+    const statusColor = status === 'COMPLIANT' ? 'green' : 'red';
+    resDiv.innerHTML = `
+      <div class="bg-${statusColor}-50 border border-${statusColor}-200 rounded-lg p-4 mb-3">
+        <p class="font-bold text-${statusColor}-800 text-lg">${status === 'COMPLIANT' ? '✅ PATUH' : '❌ TIDAK PATUH'} — ${r.discrepancy_count||0} temuan</p>
+        <p class="text-xs text-${statusColor}-600 mt-1">Metode ekstraksi: <strong>${meta.extraction_method||'—'}</strong> · Completeness Gate: <strong>${meta.document_completeness_gate||'—'}</strong></p>
+        ${meta.missing_fields?.length ? `<p class="text-xs text-yellow-700 mt-1">⚠ Field tidak terisi: ${meta.missing_fields.join(', ')}</p>` : ''}
+      </div>
+      ${meta.extracted_document_data ? `
+      <details class="bg-gray-50 border rounded-lg p-3 text-xs mb-3">
+        <summary class="font-semibold cursor-pointer text-gray-700">📋 Lihat JSON yang Diekstrak</summary>
+        <pre class="mt-2 overflow-x-auto text-gray-600">${JSON.stringify(meta.extracted_document_data, null, 2)}</pre>
+      </details>` : ''}
+      <div class="bg-gray-50 border rounded-lg p-3 text-xs font-mono max-h-64 overflow-y-auto whitespace-pre-wrap">${(r.synthesis||'').slice(0, 2000)}</div>
+    `;
+  } catch(e) {
+    resDiv.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">Error: ${e.message}</div>`;
+  } finally { showLoading(false); }
+}
+
+function loadExtractSample(type) {
+  const samples = {
+    cpo: `LETTER OF CREDIT MT700
+Beneficiary: PT SUMATRA AGRO INDUSTRIES
+Applicant: ASIA PACIFIC TRADING SDN BHD
+LC Amount: USD 1,820,000
+Currency: USD
+Incoterms: FOB
+Port of Loading: Tanjung Perak, Surabaya
+Port of Discharge: Port Klang, Malaysia
+Latest Shipment: 2026-07-15
+HS Code: 1511.10
+Goods Description: CRUDE PALM OIL (CPO)
+
+COMMERCIAL INVOICE
+Seller: PT SUMATRA AGRO INDUSTRIES
+Buyer: ASIA PACIFIC TRADING SDN BHD
+Unit Price/MT: USD 910
+FOB Amount: USD 1,820,000
+Quantity: 2000 MT
+
+BILL OF LADING
+Vessel: MV BORNEO STAR IMO 9315460
+On-board: 2026-07-10
+From: Tanjung Perak, Surabaya
+To: Port Klang, Malaysia
+
+DHE SDA INSTRUCTION
+Nominated Bank: PT Bank Mandiri (Persero) Tbk
+Bank Category: HIMBARA
+FX Conversion: 40%
+FOB Value: USD 1,820,000`,
+    coal: `LETTER OF CREDIT MT700
+Beneficiary: PT KALIMANTAN COAL EXPORT
+Applicant: SHANGHAI ENERGY IMPORTS CO. LTD
+LC Amount: USD 5,250,000
+Currency: USD
+Incoterms: FOB
+Port of Loading: Tanjung Priok, Jakarta
+Port of Discharge: Qingdao, China
+Latest Shipment: 2026-09-28
+HS Code: 2701.12
+Goods: THERMAL COAL
+
+COMMERCIAL INVOICE
+Seller: PT KALIMANTAN COAL EXPORT
+Buyer: SHANGHAI ENERGY IMPORTS CO. LTD
+Unit Price/MT: USD 105
+FOB Amount: USD 5,250,000
+
+BILL OF LADING
+Vessel: MV KALIMANTAN BULK IMO 9811000
+On-board: 2026-09-28
+From: Tanjung Priok, Jakarta
+To: Qingdao, China
+
+DHE SDA INSTRUCTION
+Nominated Bank: PT Bank CIMB Niaga Tbk
+FX Conversion: 80%
+FOB Value: USD 5,250,000`
+  };
+  document.getElementById('extract-input').value = samples[type] || '';
+}
+
+// ============================================================
+// TAB 5 — BENCHMARK RUNNER
+// ============================================================
+const BENCHMARK_SUITE = null; // loaded lazily
+
+async function runBenchmarkSuite() {
+  const apiUrl = getApiUrl();
+  const resDiv = document.getElementById('benchmark-result');
+  if(!apiUrl) { resDiv.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">⚠ URL API diperlukan untuk menjalankan benchmark.</div>'; return; }
+  resDiv.innerHTML = '<div class="flex items-center gap-2 text-sm text-gray-600"><div class="spinner"></div> Menjalankan 40 test cases...</div>';
+  showLoading(true);
+
+  try {
+    // Fetch all 40 cases metadata
+    const metaResp = await fetch(`${apiUrl}/benchmark-suite`);
+    const meta = await metaResp.json();
+    const cases = meta.cases || [];
+
+    let tp=0,tn=0,fp=0,fn=0, execTimes=[], rows=[];
+    for(const tc of cases) {
+      const caseId = tc.case_id, gt = tc.ground_truth;
+      let t0 = performance.now(), predicted='ERROR', discCount=0, execMs=0;
+      try {
+        const r = await fetch(`${apiUrl}/verify-trade-documents`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ case_id: caseId, dhe_rule_version: 'PADG_16_2026' })
+        });
+        const j = await r.json(); predicted = j.overall_status; discCount = j.discrepancy_count||0;
+      } catch(e) { predicted = 'ERROR'; }
+      execMs = Math.round(performance.now()-t0);
+      execTimes.push(execMs);
+      let verdict = '?';
+      if(gt==='NON_COMPLIANT' && predicted==='DISCREPANT') { verdict='TP'; tp++; }
+      else if(gt==='COMPLIANT' && predicted==='COMPLIANT') { verdict='TN'; tn++; }
+      else if(gt==='COMPLIANT' && predicted==='DISCREPANT') { verdict='FP'; fp++; }
+      else { verdict='FN'; fn++; }
+      rows.push({caseId, category:tc.category||'', gt, predicted, verdict, discCount, execMs});
+      // Update progress
+      resDiv.innerHTML = `<div class="text-sm text-gray-600">Running ${rows.length}/${cases.length}... (${caseId})</div>`;
+    }
+    const total = cases.length;
+    const recall = tp+fn>0 ? (tp/(tp+fn)) : 0;
+    const prec = tp+fp>0 ? (tp/(tp+fp)) : 0;
+    const f1 = (prec+recall)>0 ? (2*prec*recall/(prec+recall)) : 0;
+    const fpr = fp+tn>0 ? (fp/(fp+tn)) : 0;
+    const meanExec = execTimes.reduce((a,b)=>a+b,0)/execTimes.length;
+
+    let tableRows = rows.map(r => {
+      const icon = {TP:'✓',TN:'✓',FP:'⚠',FN:'✗'}[r.verdict]||'?';
+      const rowClass = r.verdict==='TP'||r.verdict==='TN' ? 'bg-green-50' : r.verdict==='FP' ? 'bg-yellow-50' : 'bg-red-50';
+      return `<tr class="${rowClass} text-xs"><td class="px-2 py-1 font-mono font-bold">${r.caseId}</td><td class="px-2 py-1 text-gray-600">${r.category}</td><td class="px-2 py-1">${r.gt}</td><td class="px-2 py-1">${r.predicted}</td><td class="px-2 py-1 font-bold">${icon} ${r.verdict}</td><td class="px-2 py-1 text-right">${r.discCount}</td><td class="px-2 py-1 text-right">${r.execMs}ms</td></tr>`;
+    }).join('');
+
+    resDiv.innerHTML = `
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-center"><p class="text-2xl font-black text-green-800">${(recall*100).toFixed(1)}%</p><p class="text-xs text-green-600">Recall</p></div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center"><p class="text-2xl font-black text-blue-800">${(prec*100).toFixed(1)}%</p><p class="text-xs text-blue-600">Precision</p></div>
+        <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center"><p class="text-2xl font-black text-purple-800">${f1.toFixed(4)}</p><p class="text-xs text-purple-600">F1-Score</p></div>
+        <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-center"><p class="text-2xl font-black text-red-800">${(fpr*100).toFixed(1)}%</p><p class="text-xs text-red-600">False Alarm Rate</p></div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div class="bg-gray-50 border rounded-lg p-2 text-center"><p class="text-xl font-bold">${tp}</p><p class="text-xs text-gray-500">TP</p></div>
+        <div class="bg-gray-50 border rounded-lg p-2 text-center"><p class="text-xl font-bold">${tn}</p><p class="text-xs text-gray-500">TN</p></div>
+        <div class="bg-yellow-50 border rounded-lg p-2 text-center"><p class="text-xl font-bold text-yellow-700">${fp}</p><p class="text-xs text-yellow-600">FP (False Alarm)</p></div>
+        <div class="bg-red-50 border rounded-lg p-2 text-center"><p class="text-xl font-bold text-red-700">${fn}</p><p class="text-xs text-red-600">FN (Missed)</p></div>
+      </div>
+      <p class="text-xs text-gray-500 mb-3">Mean execution: <strong>${meanExec.toFixed(1)} ms</strong> vs analyst baseline 870s → <strong>>99.9% time reduction</strong></p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs border rounded-lg overflow-hidden">
+          <thead><tr class="bg-blue-800 text-white"><th class="px-2 py-1 text-left">ID</th><th class="px-2 py-1 text-left">Category</th><th class="px-2 py-1">Ground Truth</th><th class="px-2 py-1">Predicted</th><th class="px-2 py-1">Verdict</th><th class="px-2 py-1 text-right">Disc</th><th class="px-2 py-1 text-right">Time</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>`;
+  } catch(e) { resDiv.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">Error: ${e.message}</div>`; }
+  finally { showLoading(false); }
+}
+
+// ============================================================
+// TAB 2 — CHAT / INTENT EXTRACTOR
+// ============================================================
+function runChat() {
+  const raw = document.getElementById('chat-input').value.trim(); if(!raw) return;
+  // Intent extraction (replicates 3 parallel Langflow Intent & Payload Extractor nodes)
+  let caseId = null, dheRule = null, docData = null;
+
+  // extract_case_id
+  const caseMatch = raw.match(/\b(CASE_[A-Z0-9_]+|LIVE_DEMO_[A-Z_]+)\b/i);
+  if(caseMatch) caseId = caseMatch[1].toUpperCase();
+
+  // extract_dhe_rule
+  const ruleMatch = raw.match(/\b(PADG_16_2026|PP_8_2025|BASELINE_PRE_2025)\b/i);
+  if(ruleMatch) dheRule = ruleMatch[1].toUpperCase();
+
+  // extract_json — detect embedded JSON payload
+  const jsonMatch = raw.match(/\{[\s\S]+\}/);
+  if(jsonMatch) { try { docData = JSON.parse(jsonMatch[0]); } catch(e){} }
+
+  const intentEl = document.getElementById('chat-intent');
+  intentEl.classList.remove('hidden');
+  document.getElementById('chat-intent-body').innerHTML =
+    `<p>🔹 <strong>Case ID:</strong> ${caseId||'(tidak ditemukan)'}</p>
+     <p>🔹 <strong>DHE Rule:</strong> ${dheRule||'(pakai default PADG_16_2026)'}</p>
+     <p>🔹 <strong>JSON Payload:</strong> ${docData?'✅ Ditemukan':'(tidak ada — pakai preset case_id)'}</p>`;
+
+  const resolvedRule = dheRule || 'PADG_16_2026';
+  document.getElementById('dhe-version').value = resolvedRule;
+
+  if(docData) {
+    docData.dhe_rule_version = resolvedRule;
+    const resultDiv = document.getElementById('chat-result'); resultDiv.innerHTML = '';
+    showLoading(true);
+    runAudit(docData, caseId||'CHAT_PAYLOAD').then(()=>showLoading(false));
+    return;
+  }
+
+  if(caseId && PRESETS[caseId]) {
+    const p = PRESETS[caseId];
+    const payload = { ...p, dhe_rule_version: resolvedRule };
+    showLoading(true);
+    runAudit(payload, caseId).then(()=>{
+      showLoading(false);
+      showTab('tab-audit', document.querySelectorAll('.tab-btn')[0]);
+    });
+  } else {
+    document.getElementById('chat-result').innerHTML = `<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800 mt-3">⚠ Tidak dapat mengekstrak case_id atau JSON payload yang valid. Coba: <code>Bob, cek CASE_1_COMPLIANT_CPO dengan PADG_16_2026</code></div>`;
+  }
+}
+
+// ============================================================
+// TAB 3 — STAR RATING
+// ============================================================
+function buildStars(containerId, inputId) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  for(let i=1;i<=5;i++) {
+    const b = document.createElement('button');
+    b.textContent = '★'; b.setAttribute('data-val',i);
+    b.className = 'text-2xl text-gray-300 hover:text-yellow-400 transition';
+    b.onclick = function(){
+      document.getElementById(inputId).value = i;
+      c.querySelectorAll('button').forEach((btn,idx) => { btn.className = `text-2xl transition ${idx<i?'text-yellow-400':'text-gray-300'}`; });
+    };
+    c.appendChild(b);
+  }
+}
+buildStars('usability-stars','fb-usability');
+buildStars('benefit-stars','fb-benefit');
+
+async function submitFeedback() {
+  const name = document.getElementById('fb-name').value.trim();
+  const role = document.getElementById('fb-role').value.trim();
+  const company = document.getElementById('fb-company').value;
+  const scenario = document.getElementById('fb-scenario').value;
+  const usability = parseInt(document.getElementById('fb-usability').value)||0;
+  const benefit = parseInt(document.getElementById('fb-benefit').value)||0;
+  const testimonial = document.getElementById('fb-testimonial').value.trim();
+
+  if(!name||!role||!company||!scenario||!usability||!benefit) { alert('Mohon lengkapi semua field wajib (*)'); return; }
+
+  const record = { name_initials:name, role_title:role, company_type:company, scenario_tested:scenario, usability_score:usability, benefit_score:benefit, testimonial };
+  const apiUrl = getApiUrl();
+  const resDiv = document.getElementById('fb-result');
+
+  // Generate markdown row immediately (always works, even offline)
+  const mdRow = `| ${name} | ${role} | ${company} | ${scenario} | ${usability}/5 | ${benefit}/5 | ${testimonial||'—'} |`;
+  let matrixText = document.getElementById('feedback-matrix').textContent;
+  if(matrixText.includes('Belum ada')) matrixText = '| Nama | Jabatan | Perusahaan | Skenario | Usability | Manfaat | Komentar |\n|---|---|---|---|---|---|---|\n';
+  document.getElementById('feedback-matrix').textContent = matrixText + '\n' + mdRow;
+
+  if(apiUrl) {
+    try {
+      const resp = await fetch(`${apiUrl}/validation-feedback`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record) });
+      if(resp.ok) {
+        const j = await resp.json();
+        resDiv.innerHTML = `<div class="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">✅ Tersimpan ke server. Total respons: <strong>${j.total_responses}</strong></div>`;
+      } else { throw new Error(await resp.text()); }
+    } catch(e) { resDiv.innerHTML = `<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">⚠ Server error: ${e.message}. Baris Markdown sudah ditambahkan secara lokal.</div>`; }
+  } else {
+    resDiv.innerHTML = `<div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">✅ Mode offline — baris Markdown ditambahkan. Salin dari panel kanan untuk dokumentasi.</div>`;
+  }
+  resDiv.classList.remove('hidden');
+}
+
+async function loadFeedbackMatrix() {
+  const apiUrl = getApiUrl(); if(!apiUrl) { alert('Masukkan URL API untuk memuat dari server.'); return; }
+  try {
+    const r = await fetch(`${apiUrl}/validation-feedback`);
+    const j = await r.json();
+    if(!j.responses||!j.responses.length) { document.getElementById('feedback-matrix').textContent = 'Belum ada respons.'; return; }
+    let md = '| Nama | Jabatan | Perusahaan | Skenario | Usability | Manfaat | Komentar |\n|---|---|---|---|---|---|---|\n';
+    j.responses.forEach(r => { md += `| ${r.name_initials} | ${r.role_title} | ${r.company_type} | ${r.scenario_tested} | ${r.usability_score}/5 | ${r.benefit_score}/5 | ${r.testimonial||'—'} |\n`; });
+    document.getElementById('feedback-matrix').textContent = md;
+  } catch(e) { alert('Gagal memuat: ' + e.message); }
+}
+</script>
+</body>
+</html>

@@ -77,6 +77,38 @@
         "benchmark_price": 72,
         "tolerance_pct": 10,
         "source": "World Bank Pink Sheet Table 1b, Energy"
+      },
+      "NICKEL_MATTE": {
+        "hs_code": "7501.20",
+        "description": "Nickel Matte (Class 1, LME spot)",
+        "unit": "USD/MT",
+        "benchmark_price": 16500,
+        "tolerance_pct": 8,
+        "source": "World Bank Pink Sheet Table 1c, Metals & Minerals"
+      },
+      "NATURAL_RUBBER": {
+        "hs_code": "4001.22",
+        "description": "Natural Rubber SIR-20 (Singapore SICOM)",
+        "unit": "USD/MT",
+        "benchmark_price": 1750,
+        "tolerance_pct": 7,
+        "source": "World Bank Pink Sheet Table 1a, Agriculture"
+      },
+      "COCOA_BEANS": {
+        "hs_code": "1801.00",
+        "description": "Cocoa Beans (ICCO daily price)",
+        "unit": "USD/MT",
+        "benchmark_price": 7800,
+        "tolerance_pct": 10,
+        "source": "World Bank Pink Sheet Table 1a, Beverages"
+      },
+      "ARABICA_COFFEE": {
+        "hs_code": "0901.11",
+        "description": "Arabica Coffee (ICO composite)",
+        "unit": "USD/MT",
+        "benchmark_price": 4600,
+        "tolerance_pct": 8,
+        "source": "World Bank Pink Sheet Table 1a, Beverages"
       }
     }
   },
@@ -104,6 +136,24 @@
           {"date": "2026-09-28", "lat": -3.5892, "lon": 109.3241, "distance_nm_from_tanjung_priok": 209.97, "status": "EN ROUTE / MID-SEA"},
           {"date": "2026-09-30", "lat": -6.1044, "lon": 106.8853, "distance_nm_from_tanjung_priok": 0.1, "status": "AT PORT / LOADING"}
         ]
+      },
+      "IMO9112233": {
+        "vessel_name": "MV SULAWESI NICKEL",
+        "imo": "9112233",
+        "snapshot_date": "2026-10-05",
+        "lat": -1.4306,
+        "lon": 121.4456,
+        "status": "AT PORT / LOADING",
+        "_note": "Vessel near Morowali Nickel Terminal — used for Nickel/Rubber/Cocoa/Coffee benchmark test cases"
+      },
+      "IMO9200005": {
+        "vessel_name": "MV SUMATRA RUBBER",
+        "imo": "9200005",
+        "snapshot_date": "2026-11-01",
+        "lat": null,
+        "lon": null,
+        "status": "DARK VESSEL / AIS TRANSPONDER OFF",
+        "_note": "Bug Fix #4 test: lat=null/lon=null — must trigger FAIL-CLOSED, NOT 0.0 NM default"
       }
     }
   },
