@@ -165,11 +165,21 @@ docker compose up -d --build
 cd tradeflow-sentinel
 chmod +x deploy_idcloudhost.sh
 ./deploy_idcloudhost.sh
-# → Automatically generates LANGFLOW_SECRET_KEY (Fernet 32-byte)
-# → Sets LANGFLOW_SSRF_PROTECTION_ENABLED=false
-# → Starts containers, waits for health checks
-# → Prints public access URLs
+# → Auto-loads Flow 9-Node into Langflow via /app/flows
+# → Binds port 7860 to 127.0.0.1 (Option A loopback protection against RCE/unauthorized access)
+# → Preserves existing credentials & secret key on redeployment
+# → Starts containers and waits for health checks
 ```
+
+**Connect IBM Bob / Langflow UI via SSH Tunnel:**
+```bash
+ssh -N -L 7860:localhost:7860 root@<IP_VPS>
+```
+
+**Update / Revisi ke VPS (Redeployment):**
+* **Full Update:** `git pull origin main && ./deploy_idcloudhost.sh`
+* **Fast Restart:** `git pull origin main && docker compose restart sentinel`
+* **Clean Slate:** `docker compose down -v && ./deploy_idcloudhost.sh`
 
 ### CLI Smoke Test (0 Docker)
 ```bash
@@ -235,10 +245,10 @@ tradeflow-sentinel/
 ├── tradeflow_sentinel_portable_ui.html  # ✅ NEW — Portable Web UI (Tab 1/2/3)
 ├── synthetic_data_and_rules.json        # Test cases, DHE rules, benchmarks, AISHub data
 ├── TradeFlow Sentinel Compliance Tool.json  # 9-node Langflow MCP flow
-├── langflow_component.py                # Langflow CustomComponent wrapper
-├── component_input.py                   # Langflow input component
-├── component_engine.py                  # Langflow engine component
-├── component_output.py                  # Langflow output component
+├── flows/                               # ✅ NEW — Auto-loaded flow directory for Langflow
+│   └── TradeFlow Sentinel Compliance Tool.json
+├── langflow_component.py                # Langflow CustomComponent wrapper (reference)
+├── component_input.py / component_engine.py / component_output.py # 3-node components (reference)
 ├── orchestrate_skill_openapi.json       # watsonx Orchestrate OpenAPI 3.0.1 skill
 ├── docker-compose.yml                   # ✅ Phase 2 upgraded (extra_hosts, UI mount)
 ├── .env.example                         # ✅ Phase 2 upgraded (SSRF=false, UI_FILE)

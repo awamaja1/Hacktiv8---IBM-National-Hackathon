@@ -86,8 +86,8 @@ Unstructured Docs (PDF/Text L/C, Invoice, BoL) or Pre-loaded Case ID
 | Topology | Source Files | How It Works |
 | :--- | :--- | :--- |
 | **9-Node MCP Flow (Primary)** | `TradeFlow Sentinel Compliance Tool.json` + `langflow_sentinel_engine.py` | Exposed as MCP tool `tradeflow_sentinel_compliance`: **Chat Input** → 3 parallel **Intent & Payload Extractor** nodes (`extract_case_id`, `extract_dhe_rule`, `extract_json`) → **API Message Payload Builder** → **API Request** (`POST :8000/verify-trade-documents`) → **⚖️ Sentinel Compliance Checker** → **📋 Report Formatter** → **📄 Compliance Report Output**. |
-| **3-Node Native Component Pipeline** | `component_input.py` → `component_engine.py` → `component_output.py` | Mounted to `/app/custom_components` in `docker-compose.yml`. Three native Langflow `Component` subclasses passing `Data` objects in-process. |
-| **1-Node All-in-One Component** | `langflow_component.py` | Single self-contained `TradeFlowSentinelComponent` with all validation, synthesis, and guardrail logic inlined for Langflow's validator sandbox. |
+| **3-Node Native Component Pipeline** | `component_input.py` → `component_engine.py` → `component_output.py` | Historical Phase 1 reference prototype (standalone component files in `tradeflow-sentinel/`). |
+| **1-Node All-in-One Component** | `langflow_component.py` | Single self-contained `TradeFlowSentinelComponent` with all validation, synthesis, and guardrail logic inlined for Langflow's validator sandbox (reference). |
 
 ### Role of IBM Bob & IBM watsonx Orchestrate
 
@@ -193,6 +193,32 @@ chmod +x deploy_idcloudhost.sh
   ssh -N -L 7860:localhost:7860 root@<IP_VPS>
   ```
   Once the tunnel is active, IBM Bob connects locally to `http://localhost:7860/api/v1/mcp/project/<PROJECT_ID>/streamable`. The exact ready-to-paste snippet is automatically printed by `deploy_idcloudhost.sh`.
+
+#### Workflow Update / Revisi ke VPS (Redeployment)
+
+Saat ingin memperbarui kode atau flow di VPS yang sudah pernah dideploy:
+
+1. **Update Penuh (Revisi Flow Langflow / Docker / Dependency):**
+   ```bash
+   ssh root@<IP_VPS>
+   cd ~/Hacktiv8---IBM-National-Hackathon/tradeflow-sentinel
+   git pull origin main
+   ./deploy_idcloudhost.sh
+   ```
+   *Kredensial dan encryption key lama di `.env` tetap aman dipertahankan. Flow baru otomatis menimpa flow lama tanpa merusak database Langflow.*
+
+2. **Fast Restart (Revisi Kode Engine / Web UI / Rules saja):**
+   ```bash
+   git pull origin main
+   docker compose restart sentinel
+   ```
+   *File volume mounted (`langflow_sentinel_engine.py`, `tradeflow_sentinel_portable_ui.html`, `synthetic_data_and_rules.json`) langsung aktif dalam 1–2 detik tanpa rebuild image.*
+
+3. **Clean Slate / Reset Total (Reset DB Langflow dari Nol):**
+   ```bash
+   docker compose down -v
+   ./deploy_idcloudhost.sh
+   ```
 
 ### 6.3 Benchmark Suite & CLI (no Docker)
 
