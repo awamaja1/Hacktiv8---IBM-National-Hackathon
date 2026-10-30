@@ -1489,6 +1489,8 @@ Mount it into the container or place it alongside this script.</p>
                         "ground_truth": c["ground_truth"],
                         "category": c.get("category", ""),
                         "description": c.get("description", ""),
+                        "dhe_rule_version": c.get("dhe_rule_version", "PADG_16_2026"),
+                        "document_data": c.get("document_data"),
                     }
                     for c in suite
                 ],

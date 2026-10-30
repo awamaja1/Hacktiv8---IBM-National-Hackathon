@@ -84,6 +84,7 @@ services:
     volumes:
       - ./langflow_sentinel_engine.py:/app/langflow_sentinel_engine.py:ro
       - ./synthetic_data_and_rules.json:/app/synthetic_data_and_rules.json:ro
+      - ./test_suite_benchmark.py:/app/test_suite_benchmark.py:ro
       # Portable Web UI — served at GET / for multi-device access without IBM Bob IDE
       - ./tradeflow_sentinel_portable_ui.html:/app/tradeflow_sentinel_portable_ui.html:ro
     command: >

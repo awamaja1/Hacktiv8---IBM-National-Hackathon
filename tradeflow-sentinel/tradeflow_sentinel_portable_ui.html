@@ -1009,17 +1009,33 @@ async function runBenchmarkSuite() {
   try {
     // Fetch all 40 cases metadata
     const metaResp = await fetch(`${apiUrl}/benchmark-suite`);
+    if(!metaResp.ok) {
+      const err = await metaResp.json().catch(()=>({}));
+      resDiv.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">❌ Gagal memuat benchmark suite (${metaResp.status}): ${err.detail || metaResp.statusText}</div>`;
+      return;
+    }
     const meta = await metaResp.json();
     const cases = meta.cases || [];
+    if(cases.length === 0) {
+      resDiv.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">⚠ Tidak ada test cases yang ditemukan di server.</div>';
+      return;
+    }
 
     let tp=0,tn=0,fp=0,fn=0, execTimes=[], rows=[];
     for(const tc of cases) {
       const caseId = tc.case_id, gt = tc.ground_truth;
       let t0 = performance.now(), predicted='ERROR', discCount=0, execMs=0;
       try {
+        const reqBody = {
+          case_id: caseId,
+          dhe_rule_version: tc.dhe_rule_version || 'PADG_16_2026'
+        };
+        if(tc.document_data) {
+          reqBody.document_data = tc.document_data;
+        }
         const r = await fetch(`${apiUrl}/verify-trade-documents`, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ case_id: caseId, dhe_rule_version: 'PADG_16_2026' })
+          body: JSON.stringify(reqBody)
         });
         const j = await r.json(); predicted = j.overall_status; discCount = j.discrepancy_count||0;
       } catch(e) { predicted = 'ERROR'; }
