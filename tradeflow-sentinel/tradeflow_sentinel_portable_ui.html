@@ -415,28 +415,28 @@ Belum ada respons. Kirim feedback pertama untuk melihat matriks di sini.
 const PRESETS = {
   CASE_1_COMPLIANT_CPO: {
     case_id: "CASE_1_COMPLIANT_CPO",
-    lc_ref: { beneficiary:"PT SUMATRA AGRO INDUSTRIES", applicant:"ASIA PACIFIC TRADING SDN BHD", currency:"USD", amount:1820000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Perak, Surabaya", port_of_discharge:"Port Klang, Malaysia", latest_shipment_date:"2026-07-15" },
+    lc_mt700_reference: { beneficiary:"PT SUMATRA AGRO INDUSTRIES", applicant:"ASIA PACIFIC TRADING SDN BHD", currency:"USD", amount:1820000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Perak, Surabaya", port_of_discharge:"Port Klang, Malaysia", latest_shipment_date:"2026-07-15" },
     commercial_invoice: { seller:"PT SUMATRA AGRO INDUSTRIES", buyer:"ASIA PACIFIC TRADING SDN BHD", currency:"USD", hs_code:"1511.10", goods_description:"CRUDE PALM OIL (CPO)", quantity_mt:2000, unit_price_usd_mt:910, total_fob_usd:1820000, incoterms:"FOB", port_of_loading:"Tanjung Perak, Surabaya" },
     bill_of_lading: { vessel_name:"MV BORNEO STAR", imo_number:"9315460", port_of_loading:"Tanjung Perak, Surabaya", port_of_discharge:"Port Klang, Malaysia", on_board_date:"2026-07-10", goods_description:"CRUDE PALM OIL (CPO), HS 1511.10" },
     dhe_sda_transaction: { fob_usd:1820000, nominated_bank:"PT Bank Mandiri (Persero) Tbk", bank_category:"HIMBARA", placement_type:"Reksus DHE SDA", requested_fx_conversion_pct:40, hold_period_months:12 }
   },
   CASE_2_DISCREPANT_COAL: {
     case_id: "CASE_2_DISCREPANT_COAL",
-    lc_ref: { beneficiary:"PT KALIMANTAN COAL EXPORT", applicant:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", amount:5250000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", latest_shipment_date:"2026-08-05" },
+    lc_mt700_reference: { beneficiary:"PT KALIMANTAN COAL EXPORT", applicant:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", amount:5250000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", latest_shipment_date:"2026-08-05" },
     commercial_invoice: { seller:"PT KALIMANTAN COAL EXPORT", buyer:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", hs_code:"2701.12", goods_description:"THERMAL COAL", quantity_mt:50000, unit_price_usd_mt:105, total_fob_usd:5250000, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta" },
     bill_of_lading: { vessel_name:"MV KALIMANTAN BULK", imo_number:"9811000", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", on_board_date:"2026-08-05", goods_description:"THERMAL COAL, HS 2701.12" },
     dhe_sda_transaction: { fob_usd:5250000, nominated_bank:"PT Bank CIMB Niaga Tbk", bank_category:"PRIVATE_BANK", placement_type:"Regular FX Account", requested_fx_conversion_pct:80, hold_period_months:12 }
   },
   LIVE_DEMO_COAL: {
     case_id: "LIVE_DEMO_COAL",
-    lc_ref: { beneficiary:"PT KALIMANTAN COAL EXPORT", applicant:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", amount:5250000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", latest_shipment_date:"2026-10-05" },
+    lc_mt700_reference: { beneficiary:"PT KALIMANTAN COAL EXPORT", applicant:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", amount:5250000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", latest_shipment_date:"2026-10-05" },
     commercial_invoice: { seller:"PT KALIMANTAN COAL EXPORT", buyer:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", hs_code:"2701.12", goods_description:"THERMAL COAL", quantity_mt:50000, unit_price_usd_mt:105, total_fob_usd:5250000, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta" },
     bill_of_lading: { vessel_name:"MV KALIMANTAN BULK", imo_number:"9811000", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", on_board_date:"2026-09-28", goods_description:"THERMAL COAL, HS 2701.12" },
     dhe_sda_transaction: { fob_usd:5250000, nominated_bank:"PT Bank CIMB Niaga Tbk", bank_category:"PRIVATE_BANK", placement_type:"Regular FX Account", requested_fx_conversion_pct:80, hold_period_months:12 }
   },
   LIVE_DEMO_COMPLIANT_COAL: {
     case_id: "LIVE_DEMO_COMPLIANT_COAL",
-    lc_ref: { beneficiary:"PT KALIMANTAN COAL EXPORT", applicant:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", amount:3750000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", latest_shipment_date:"2026-10-05" },
+    lc_mt700_reference: { beneficiary:"PT KALIMANTAN COAL EXPORT", applicant:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", amount:3750000, tolerance_pct:5, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", latest_shipment_date:"2026-10-05" },
     commercial_invoice: { seller:"PT KALIMANTAN COAL EXPORT", buyer:"SHANGHAI ENERGY IMPORTS CO. LTD", currency:"USD", hs_code:"2701.12", goods_description:"THERMAL COAL", quantity_mt:50000, unit_price_usd_mt:75, total_fob_usd:3750000, incoterms:"FOB", port_of_loading:"Tanjung Priok, Jakarta" },
     bill_of_lading: { vessel_name:"MV KALIMANTAN BULK", imo_number:"9811000", port_of_loading:"Tanjung Priok, Jakarta", port_of_discharge:"Qingdao, China", on_board_date:"2026-09-30", goods_description:"THERMAL COAL, HS 2701.12" },
     dhe_sda_transaction: { fob_usd:3750000, nominated_bank:"PT Bank Mandiri (Persero) Tbk", bank_category:"HIMBARA", placement_type:"Reksus DHE SDA", requested_fx_conversion_pct:50, hold_period_months:12 }
@@ -501,7 +501,7 @@ function showTab(id, btn) {
 // ============================================================
 function loadPreset(key) {
   const p = PRESETS[key]; if(!p) return;
-  const ci = p.commercial_invoice, bol = p.bill_of_lading, dhe = p.dhe_sda_transaction, lc = p.lc_ref;
+  const ci = p.commercial_invoice, bol = p.bill_of_lading, dhe = p.dhe_sda_transaction, lc = p.lc_mt700_reference || p.lc_ref;
   document.getElementById('f-seller').value = ci.seller;
   document.getElementById('f-buyer').value = ci.buyer;
   document.getElementById('f-hs').value = ci.hs_code;
@@ -593,7 +593,7 @@ async function runAudit(docData, caseId) {
       // Online mode — call FastAPI backend
       const resp = await fetch(`${apiUrl}/verify-trade-documents`, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ case_id: null, dhe_rule_version: dheVersion, document_data: docData })
+        body: JSON.stringify({ case_id: caseId || docData?.case_id || null, dhe_rule_version: dheVersion, document_data: docData })
       });
       if(!resp.ok) throw new Error(`API ${resp.status}: ${await resp.text()}`);
       result = await resp.json();

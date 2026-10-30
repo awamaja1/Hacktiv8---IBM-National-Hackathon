@@ -1212,10 +1212,12 @@ def run_pipeline(case_id: str | None = None, dhe_rule_version: str | None = None
     }
 
     if document_data:
-        case = document_data
+        case = dict(document_data)
         case_id = case_id or "LIVE_PAYLOAD"
         if "exporter_instructions" in case and "dhe_sda_transaction" not in case:
             case["dhe_sda_transaction"] = case["exporter_instructions"]
+        if "lc_ref" in case and "lc_mt700_reference" not in case:
+            case["lc_mt700_reference"] = case["lc_ref"]
     else:
         if case_id not in cases:
             raise ValueError(f"Unknown case_id '{case_id}'. Available: {list(cases.keys())}")
@@ -1243,9 +1245,15 @@ def run_pipeline(case_id: str | None = None, dhe_rule_version: str | None = None
     # Resolve LC reference
     if "lc_mt700_reference" in case and isinstance(case["lc_mt700_reference"], dict):
         lc_ref = case["lc_mt700_reference"]
-    else:
+    elif "lc_ref" in case and isinstance(case["lc_ref"], dict):
+        lc_ref = case["lc_ref"]
+    elif "lc_reference" in case and case["lc_reference"] in lc_refs:
         lc_key = case["lc_reference"]
         lc_ref = lc_refs[lc_key]
+    elif case_id in cases and "lc_reference" in cases[case_id]:
+        lc_ref = lc_refs[cases[case_id]["lc_reference"]]
+    else:
+        raise ValueError(f"Could not resolve LC reference for case '{case_id}'. Expected 'lc_mt700_reference' or 'lc_reference'.")
 
     # Resolve vessel — Bug Fix #2: use .get() so unknown IMO returns None (fail-closed)
     imo_key = f"IMO{str(case['bill_of_lading']['imo_number']).strip()}"
