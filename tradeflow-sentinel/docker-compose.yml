@@ -16,7 +16,9 @@ services:
     container_name: tradeflow_langflow
     restart: unless-stopped
     ports:
-      - "${HOST_PORT}:${LANGFLOW_PORT}"
+      # Option A (DevOps Best Practice): Bind to 127.0.0.1 so Langflow is never exposed
+      # to the public internet on VPS. Access via SSH tunnel: ssh -N -L 7860:localhost:7860 root@<VPS_IP>
+      - "${LANGFLOW_BIND_IP:-127.0.0.1}:${HOST_PORT}:${LANGFLOW_PORT}"
     # Linux Cloud VPS (IDCloudHost Ubuntu): resolves host.docker.internal → host gateway IP
     # Works transparently on Windows/Mac Docker Desktop (already built-in) and Linux Engine.
     extra_hosts:
@@ -35,6 +37,8 @@ services:
       LANGFLOW_SSRF_PROTECTION_ENABLED: ${LANGFLOW_SSRF_PROTECTION_ENABLED}
       LANGFLOW_SSRF_ALLOWED_HOSTS: ${LANGFLOW_SSRF_ALLOWED_HOSTS}
       DO_NOT_TRACK: ${DO_NOT_TRACK}
+      LANGFLOW_LOAD_FLOWS_PATH: ${LANGFLOW_LOAD_FLOWS_PATH:-/app/flows}
+      LANGFLOW_LOAD_FLOWS_OVERWRITE_ON_NAME_MATCH: ${LANGFLOW_LOAD_FLOWS_OVERWRITE_ON_NAME_MATCH:-true}
     deploy:
       resources:
         limits:
@@ -44,16 +48,8 @@ services:
           cpus: "${LANGFLOW_CPUS_RESERVATION}"
           memory: ${LANGFLOW_MEM_RESERVATION}
     volumes:
-      # 3-node Langflow flow: each file is a self-contained Component subclass.
-      # No cross-file Python imports — Langflow's code-cache sees each independently.
-      #   Node 1: Trade Document Input  (loads case data, Guardrail 1)
-      #   Node 2: Compliance Engine     (UCP 600, SOLAS, AISHub, DHE SDA checks)
-      #   Node 3: Compliance Report     (IBM Bob synthesis, Guardrail 2, ROI)
-      - ./component_input.py:${LANGFLOW_COMPONENTS_PATH}/component_input.py:ro
-      - ./component_engine.py:${LANGFLOW_COMPONENTS_PATH}/component_engine.py:ro
-      - ./component_output.py:${LANGFLOW_COMPONENTS_PATH}/component_output.py:ro
-      # Data file outside LANGFLOW_COMPONENTS_PATH so it is never parsed as Python.
-      - ./synthetic_data_and_rules.json:/app/synthetic_data_and_rules.json:ro
+      # Auto-load Flow 9-Node MCP tool on container startup
+      - ./flows:/app/flows:ro
       # Persistent Langflow database (flows, sessions)
       - langflow_data:${LANGFLOW_CONFIG_DIR}
     healthcheck:

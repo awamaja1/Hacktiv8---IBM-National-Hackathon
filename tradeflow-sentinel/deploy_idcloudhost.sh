@@ -93,24 +93,41 @@ if [ -z "${PUBLIC_IP}" ]; then
 fi
 ok "IP Publik VPS terdeteksi: ${PUBLIC_IP}"
 
-# If .env already exists, prompt before overwriting
+# Ensure flows directory exists and has the 9-node flow for auto-loading
+log "Menyiapkan direktori flows untuk auto-load Langflow..."
+mkdir -p flows
+if [ -f "TradeFlow Sentinel Compliance Tool.json" ]; then
+  cp "TradeFlow Sentinel Compliance Tool.json" "flows/TradeFlow Sentinel Compliance Tool.json"
+fi
+ok "Flows directory siap: $(ls -l flows/ | wc -l) file flow"
+
+# If .env already exists, preserve existing credentials
 if [ -f ".env" ]; then
-  warn ".env sudah ada. Memperbarui LANGFLOW_SECRET_KEY dan LANGFLOW_SSRF_PROTECTION_ENABLED saja..."
-  # Update only the secret key and SSRF flag without overwriting user credentials
-  sed -i "s|^LANGFLOW_SECRET_KEY=.*|LANGFLOW_SECRET_KEY=${LANGFLOW_SECRET_KEY}|" .env
+  warn ".env sudah ada. Mempertahankan kredensial yang ada dan memperbarui konfigurasi keamanan..."
+  # Only inject generated key if missing or default placeholder
+  if grep -qE "^LANGFLOW_SECRET_KEY=(<.*>|)?$" .env 2>/dev/null || ! grep -q "^LANGFLOW_SECRET_KEY=" .env; then
+    sed -i "s|^LANGFLOW_SECRET_KEY=.*|LANGFLOW_SECRET_KEY=${LANGFLOW_SECRET_KEY}|" .env
+  fi
   sed -i "s|^LANGFLOW_SSRF_PROTECTION_ENABLED=.*|LANGFLOW_SSRF_PROTECTION_ENABLED=false|" .env
-  # Add UI_FILE and FEEDBACK_FILE if missing
+  if grep -q "^LANGFLOW_BIND_IP=" .env; then
+    sed -i "s|^LANGFLOW_BIND_IP=.*|LANGFLOW_BIND_IP=127.0.0.1|" .env
+  else
+    echo "LANGFLOW_BIND_IP=127.0.0.1" >> .env
+  fi
+  grep -q "^LANGFLOW_LOAD_FLOWS_PATH=" .env || echo "LANGFLOW_LOAD_FLOWS_PATH=/app/flows" >> .env
+  grep -q "^LANGFLOW_LOAD_FLOWS_OVERWRITE_ON_NAME_MATCH=" .env || echo "LANGFLOW_LOAD_FLOWS_OVERWRITE_ON_NAME_MATCH=true" >> .env
   grep -q "^UI_FILE=" .env || echo "UI_FILE=/app/tradeflow_sentinel_portable_ui.html" >> .env
   grep -q "^FEEDBACK_FILE=" .env || echo "FEEDBACK_FILE=/app/validation_feedback_log.json" >> .env
 else
   cp .env.example .env
   sed -i "s|^LANGFLOW_SECRET_KEY=.*|LANGFLOW_SECRET_KEY=${LANGFLOW_SECRET_KEY}|" .env
   sed -i "s|^LANGFLOW_SSRF_PROTECTION_ENABLED=.*|LANGFLOW_SSRF_PROTECTION_ENABLED=false|" .env
+  sed -i "s|^LANGFLOW_BIND_IP=.*|LANGFLOW_BIND_IP=127.0.0.1|" .env
   sed -i "s|^LANGFLOW_SUPERUSER_PASSWORD=.*|LANGFLOW_SUPERUSER_PASSWORD=$(openssl rand -hex 12 2>/dev/null || echo 'tradeflow2026')|" .env
   ok ".env dibuat dari .env.example"
 fi
 
-ok ".env dikonfigurasi (LANGFLOW_SSRF_PROTECTION_ENABLED=false, key generated)"
+ok ".env dikonfigurasi (LANGFLOW_BIND_IP=127.0.0.1, auto-load flow enabled, SSRF=false)"
 
 # --------------------------------------------------------------------------
 # 4. Build and start containers
@@ -150,14 +167,40 @@ else
 fi
 
 # --------------------------------------------------------------------------
-# 6. Print access URLs
+# 6. Extract MCP Project ID from auto-loaded flow
+# --------------------------------------------------------------------------
+log "Memeriksa status auto-loaded flow & MCP endpoint..."
+MCP_PROJECT_ID=""
+AUTO_LOGIN_RESP=$(curl -sf "http://localhost:7860/api/v1/auto_login" 2>/dev/null || true)
+ACCESS_TOKEN=$(python3 -c "import json,sys
+try:
+    d = json.loads('''$AUTO_LOGIN_RESP''')
+    sys.stdout.write(d.get('access_token', ''))
+except Exception:
+    pass" 2>/dev/null || true)
+
+if [ -n "$ACCESS_TOKEN" ]; then
+  FLOWS_RESP=$(curl -sf -H "Authorization: Bearer $ACCESS_TOKEN" "http://localhost:7860/api/v1/flows/" 2>/dev/null || true)
+  MCP_PROJECT_ID=$(python3 -c "import json,sys
+try:
+    data = json.loads('''$FLOWS_RESP''')
+    if isinstance(data, list) and len(data) > 0:
+        # Get folder_id of the first flow
+        fid = data[0].get('folder_id', '')
+        sys.stdout.write(fid if fid else data[0].get('id', ''))
+except Exception:
+    pass" 2>/dev/null || true)
+fi
+
+# --------------------------------------------------------------------------
+# 7. Print access URLs & instructions
 # --------------------------------------------------------------------------
 echo ""
 echo -e "${CYAN}══════════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  🚀 DEPLOYMENT BERHASIL — TradeFlow Sentinel Phase 2            ${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "  📱 Portable Web UI (Mobile/Tablet/Desktop):"
+echo -e "  📱 Portable Web UI (Public — Mobile/Tablet/Desktop):"
 echo -e "     ${GREEN}http://${PUBLIC_IP}:8000/${NC}"
 echo ""
 echo -e "  📖 API Docs (Swagger UI):"
@@ -169,8 +212,41 @@ echo ""
 echo -e "  🔌 Preset Loader:"
 echo -e "     ${GREEN}http://${PUBLIC_IP}:8000/presets${NC}"
 echo ""
-echo -e "  🎛️  Langflow Flow Editor:"
-echo -e "     ${GREEN}http://${PUBLIC_IP}:7860/${NC}"
+echo -e "  🔒 Langflow UI & MCP Server (Option A — Loopback Protected):"
+echo -e "     Port 7860 dibind ke 127.0.0.1 demi keamanan RCE (tidak terekspos ke internet)."
+echo -e "     Buka terminal di laptop Anda dan jalankan SSH Tunnel:"
+echo -e "     ${YELLOW}ssh -N -L 7860:localhost:7860 root@${PUBLIC_IP}${NC}"
+echo ""
+echo -e "     Setelah tunnel aktif, buka browser di laptop:"
+echo -e "     ${GREEN}http://localhost:7860/${NC}"
+echo ""
+if [ -n "$MCP_PROJECT_ID" ]; then
+  echo -e "  🤖 IBM Bob MCP Config (.bob/mcp.json):"
+  echo -e "     Flow 'TradeFlow Sentinel Compliance Tool' berhasil di-load otomatis!"
+  echo -e "     Project ID: ${YELLOW}${MCP_PROJECT_ID}${NC}"
+  echo -e "     Gunakan konfigurasi berikut di laptop Anda (pastikan SSH Tunnel aktif):"
+  echo -e "${CYAN}------------------------------------------------------------------${NC}"
+  echo -e "{"
+  echo -e "  \"mcpServers\": {"
+  echo -e "    \"lf-starter_project\": {"
+  echo -e "      \"command\": \"cmd\","
+  echo -e "      \"args\": ["
+  echo -e "        \"/c\","
+  echo -e "        \"uvx\","
+  echo -e "        \"mcp-proxy\","
+  echo -e "        \"--transport\","
+  echo -e "        \"streamablehttp\","
+  echo -e "        \"http://localhost:7860/api/v1/mcp/project/${MCP_PROJECT_ID}/streamable\""
+  echo -e "      ]"
+  echo -e "    }"
+  echo -e "  }"
+  echo -e "}"
+  echo -e "${CYAN}------------------------------------------------------------------${NC}"
+else
+  echo -e "  🤖 IBM Bob MCP Endpoint:"
+  echo -e "     Setelah mengaktifkan SSH tunnel, periksa Project ID di http://localhost:7860/"
+  echo -e "     URL format: http://localhost:7860/api/v1/mcp/project/<PROJECT_ID>/streamable"
+fi
 echo ""
 echo -e "  📋 Feedback Collector:"
 echo -e "     ${GREEN}POST http://${PUBLIC_IP}:8000/validation-feedback${NC}"
@@ -178,7 +254,7 @@ echo -e "     ${GREEN}GET  http://${PUBLIC_IP}:8000/validation-feedback${NC}"
 echo ""
 echo -e "  🔑 Credentials: lihat file ${YELLOW}.env${NC} (jangan di-commit ke Git!)"
 echo ""
-echo -e "${CYAN}  Perintah berguna:${NC}"
+echo -e "${CYAN}  Perintah berguna di server VPS:${NC}"
 echo -e "  ${COMPOSE_CMD} logs -f sentinel         # lihat log Sentinel API"
 echo -e "  ${COMPOSE_CMD} logs -f langflow          # lihat log Langflow"
 echo -e "  ${COMPOSE_CMD} ps                        # status containers"

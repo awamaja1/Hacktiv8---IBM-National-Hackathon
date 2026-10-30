@@ -175,15 +175,24 @@ docker-compose up --build
 
 - **Portable Web Portal:** `http://localhost:8000/`
 - **Swagger UI:** `http://localhost:8000/docs`
-- **Langflow UI & MCP Server:** `http://localhost:7860`
+- **Langflow UI & MCP Server:** `http://localhost:7860/` (Flow 9-Node automatically loaded from `./flows`)
 
 ### 6.2 Cloud VPS Deploy (IDCloudHost Ubuntu 22.04 / 24.04)
 
 ```bash
 cd tradeflow-sentinel
 chmod +x deploy_idcloudhost.sh
-./deploy_idcloudhost.sh   # checks Docker, generates secret key + .env, builds, waits for health checks
+./deploy_idcloudhost.sh
 ```
+
+**Security & Auto-Load Architecture (Option A — DevOps Best Practice):**
+* **Flow 9-Node Auto-Loaded:** `flows/TradeFlow Sentinel Compliance Tool.json` is automatically loaded into Langflow on container startup via `LANGFLOW_LOAD_FLOWS_PATH=/app/flows` (`LANGFLOW_AUTO_LOGIN=true`).
+* **Port 7860 Protected:** Bound to `127.0.0.1` so Langflow's visual editor is never exposed to the public internet (eliminating unauthorized access and Remote Code Execution risks).
+* **Connect IBM Bob / UI via SSH Tunnel:**
+  ```bash
+  ssh -N -L 7860:localhost:7860 root@<IP_VPS>
+  ```
+  Once the tunnel is active, IBM Bob connects locally to `http://localhost:7860/api/v1/mcp/project/<PROJECT_ID>/streamable`. The exact ready-to-paste snippet is automatically printed by `deploy_idcloudhost.sh`.
 
 ### 6.3 Benchmark Suite & CLI (no Docker)
 
@@ -226,8 +235,8 @@ Live payloads are sent as `document_data` (`lc_mt700_reference`, `commercial_inv
 
 ### 6.5 Langflow 9-Node Flow & IBM Bob MCP
 
-1. Import `tradeflow-sentinel/TradeFlow Sentinel Compliance Tool.json` into Langflow (`http://localhost:7860`).
-2. Point `.bob/mcp.json` to your Langflow project's MCP Streamable HTTP URL and API key.
+1. Flow `TradeFlow Sentinel Compliance Tool.json` is loaded automatically into Langflow at container startup via `./flows`.
+2. Point `.bob/mcp.json` to your Langflow project's MCP Streamable HTTP URL (`http://localhost:7860/api/v1/mcp/project/<PROJECT_ID>/streamable`).
 3. In IBM Bob (with `tradeflow-sentinel/AGENT.md` loaded), prompt with a case string (`CASE_2_DISCREPANT_COAL PADG_16_2026`) or a natural-language request containing a JSON payload.
 4. Bob invokes `mcp__lf-starter_project__tradeflow_sentinel_compliance` and returns an Indonesian compliance report with UCP 600 citations and corrective action tables.
 
@@ -245,12 +254,14 @@ Hacktiv8---IBM-National-Hackathon/
 │   └── PDF/                                       # Blueprint, mentor feedback, submission form, pitch deck
 ├── tradeflow-sentinel/
 │   ├── AGENT.md                                   # IBM Bob system instructions & passthrough guardrails
-│   ├── TradeFlow Sentinel Compliance Tool.json    # 9-node Langflow MCP flow export
+│   ├── TradeFlow Sentinel Compliance Tool.json    # Master 9-node Langflow MCP flow export
+│   ├── flows/                                     # Auto-loaded flow directory for Langflow container
+│   │   └── TradeFlow Sentinel Compliance Tool.json
 │   ├── langflow_sentinel_engine.py                # Engine, extractor, Guardrails 1 & 2, FastAPI & CLI
 │   ├── tradeflow_sentinel_portable_ui.html        # 5-tab Portable Web Portal (served at GET /)
 │   ├── test_suite_benchmark.py                    # 40-case benchmark suite
-│   ├── component_input.py / component_engine.py / component_output.py  # 3-node topology
-│   ├── langflow_component.py                      # 1-node all-in-one topology
+│   ├── component_input.py / component_engine.py / component_output.py  # 3-node topology (reference)
+│   ├── langflow_component.py                      # 1-node all-in-one topology (reference)
 │   ├── synthetic_data_and_rules.json              # DHE SDA versions, AISHub, Pink Sheet, cases
 │   ├── orchestrate_skill_openapi.json             # watsonx Orchestrate OpenAPI 3.0.1 skill
 │   ├── docker-compose.yml                         # tradeflow_langflow :7860 + tradeflow_sentinel_api :8000
