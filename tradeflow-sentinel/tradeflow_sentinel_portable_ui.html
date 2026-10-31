@@ -323,7 +323,7 @@
             <h2 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
               <span>📄</span> Parameter Set Dokumen Perdagangan
             </h2>
-            <button onclick="autoRun()" class="text-xs text-blue-600 hover:text-blue-800 font-semibold">Muat Ulang</button>
+            <button onclick="loadPreset('CASE_1_COMPLIANT_CPO', false)" class="text-xs text-slate-500 hover:text-blue-700 font-semibold flex items-center gap-1"><span>🔄</span> Reset Form</button>
           </div>
 
           <!-- Section 1: L/C & Parties -->
@@ -436,10 +436,13 @@
             </div>
           </div>
 
-          <!-- Run Audit CTA -->
-          <div class="pt-2">
-            <button onclick="runFromForm()" class="w-full py-3 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white font-bold rounded-xl shadow-lg shadow-blue-600/25 transition flex items-center justify-center gap-2 text-sm">
+          <!-- Run Audit CTA & Reset -->
+          <div class="pt-2 flex gap-2">
+            <button onclick="runFromForm()" class="flex-1 py-3 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white font-bold rounded-xl shadow-lg shadow-blue-600/25 transition flex items-center justify-center gap-2 text-sm">
               <span>⚡</span> <span>Jalankan Audit Kepatuhan Dokumen</span>
+            </button>
+            <button onclick="resetAuditView()" title="Kembalikan ke status Standby" class="px-3.5 py-3 border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold rounded-xl transition flex items-center justify-center text-xs">
+              🔄
             </button>
           </div>
         </div>
@@ -506,7 +509,7 @@
           <div class="flex items-center justify-between px-4 py-3 bg-slate-900 text-white border-b border-slate-800 flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <span class="text-base">🤖</span>
-              <p class="font-bold text-sm">Laporan Sintesis Eksekutif (IBM Bob Narrative)</p>
+              <p class="font-bold text-sm">Laporan Sintesis Eksekutif (IBM Granite Narrative)</p>
               <span id="synthesis-engine-tag" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600 text-white font-bold shadow-sm">LIVE watsonx.ai (Granite 3.3 8B)</span>
             </div>
             <button onclick="copySynthesis(this)" class="text-xs px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition border border-slate-700 flex items-center gap-1 shadow-sm">
@@ -707,7 +710,7 @@
     <div class="spinner-blue"></div>
     <div>
       <p class="text-sm font-bold text-slate-800">Menjalankan Verifikasi Dokumen</p>
-      <p class="text-xs text-slate-500 mt-0.5">Haversine · UCP 600 · PADG 16/2026 · IBM Bob</p>
+      <p class="text-xs text-slate-500 mt-0.5">Haversine · UCP 600 · PADG 16/2026 · IBM watsonx.ai</p>
     </div>
   </div>
 </div>
@@ -888,7 +891,7 @@ function showTab(id, btn) {
 // ============================================================
 // PRESET LOADER
 // ============================================================
-function loadPreset(key) {
+function loadPreset(key, autoRun = true) {
   const p = PRESETS[key];
   if (!p) return;
   const ci = p.commercial_invoice;
@@ -912,7 +915,74 @@ function loadPreset(key) {
   document.getElementById('f-placement').value = dhe.placement_type;
   document.getElementById('f-fx-pct').value = dhe.requested_fx_conversion_pct;
 
-  runAudit(p, key);
+  if (autoRun) {
+    runAudit(p, key);
+  } else {
+    resetAuditView(key);
+  }
+}
+
+function resetAuditView(caseId = 'CASE_1_COMPLIANT_CPO') {
+  const banner = document.getElementById('verdict-banner');
+  if (banner) {
+    banner.className = 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-5 text-white shadow-lg transition-all relative overflow-hidden';
+  }
+  const vIcon = document.getElementById('verdict-icon');
+  const vStatus = document.getElementById('verdict-status');
+  const vDesc = document.getElementById('verdict-desc');
+  const vLat = document.getElementById('verdict-latency');
+  const vTag = document.getElementById('verdict-case-tag');
+  const gb = document.getElementById('guardrail-badges');
+
+  if (vIcon) vIcon.textContent = '⚖️';
+  if (vStatus) vStatus.textContent = 'STANDBY — SIAP DIAUDIT';
+  if (vDesc) vDesc.textContent = 'Parameter dokumen telah dimuat. Klik "⚡ Jalankan Audit Kepatuhan Dokumen" atau pilih salah satu skenario preset untuk memulai verifikasi deterministik 6 pilar.';
+  if (vLat) vLat.textContent = '-- ms';
+  if (vTag) vTag.textContent = caseId || 'SIAP DIAUDIT';
+  if (gb) {
+    gb.innerHTML = `
+      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">G1 Input: Standby</span>
+      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">G2 Output: Standby</span>
+    `;
+  }
+
+  // 6 Check Cards in Standby
+  const checkDefs = [
+    { key: 'ucp_art18', label: 'UCP 600 Art. 18', sub: 'Commercial Invoice vs L/C' },
+    { key: 'ucp_art20', label: 'UCP 600 Art. 20', sub: 'Bill of Lading vs L/C' },
+    { key: 'aishu_prox', label: 'AISHub Haversine', sub: 'Radius Geolocation Kapal' },
+    { key: 'imo_solas', label: 'SOLAS Check Digit', sub: 'Integritas IMO Number' },
+    { key: 'price_dev', label: 'World Bank Pink Sheet', sub: 'Toleransi Deviasi Harga Pasar' },
+    { key: 'dhe_sda', label: 'DHE SDA Indonesia', sub: 'Kepatuhan Regulasi Devisa' },
+  ];
+
+  const cardsContainer = document.getElementById('check-cards');
+  if (cardsContainer) {
+    cardsContainer.innerHTML = '';
+    checkDefs.forEach(cd => {
+      cardsContainer.innerHTML += `
+        <div class="glass-card rounded-xl p-3.5 border border-slate-200 bg-slate-50/70 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-bold text-slate-700">${cd.label}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-slate-200 text-slate-600">STANDBY</span>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium">${cd.sub}</p>
+          </div>
+          <p class="text-[11px] mt-2 text-slate-500 italic bg-white/70 p-1.5 rounded-lg border border-slate-100">Menunggu eksekusi verifikasi deterministik...</p>
+        </div>`;
+    });
+  }
+
+  // Hide remediation section
+  const remSec = document.getElementById('remediation-section');
+  if (remSec) remSec.classList.add('hidden');
+
+  // Executive narrative synthesis placeholder
+  const synthOut = document.getElementById('synthesis-output');
+  if (synthOut) {
+    synthOut.innerHTML = '<p class="text-xs text-slate-400 italic">Klik tombol <strong>"⚡ Jalankan Audit Kepatuhan Dokumen"</strong> di panel sebelah kiri untuk menganalisis dokumen dan menghasilkan sintesis naratif eksekutif melalui IBM Granite (watsonx.ai).</p>';
+  }
 }
 
 function buildPayloadFromForm() {
@@ -2042,9 +2112,9 @@ async function checkHealth(showAlert = false) {
   const savedUrl = getLocalApiUrl();
   if (document.getElementById('api-url')) document.getElementById('api-url').value = savedUrl;
 
-  // Initialize default active tab and preset
+  // Initialize default active tab and preset (standby without auto-running audit)
   showTab('tab-audit', document.querySelectorAll('.tab-btn')[0]);
-  loadPreset('CASE_1_COMPLIANT_CPO');
+  loadPreset('CASE_1_COMPLIANT_CPO', false);
   checkHealth(false);
 
   // Keyboard shortcut: Ctrl+Enter or Cmd+Enter to run audit in Tab 1
