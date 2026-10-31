@@ -1,4 +1,4 @@
-﻿# TradeFlow Sentinel — Git ignore rules
+# TradeFlow Sentinel — Git ignore rules
 
 # Environment files — never commit real credentials
 .env
@@ -11,3 +11,7 @@ __pycache__/
 
 # Docker volumes
 langflow_data/
+
+# Node modules
+node_modules/
+package-lock.json

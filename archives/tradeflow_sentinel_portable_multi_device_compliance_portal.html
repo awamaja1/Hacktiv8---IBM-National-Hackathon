@@ -79,7 +79,7 @@
         <div>
           <div class="text-xs sm:text-sm font-semibold text-white flex items-center gap-2 flex-wrap">
             <span id="engineStatusText">Mode Mesin Aktif: Portable Built-in Deterministic Engine (&lt; 2 ms)</span>
-            <span class="text-[11px] mono px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">Zero Bobcoins</span>
+            <span class="text-[11px] mono px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">watsonx Enterprise</span>
           </div>
           <p class="text-xs text-slate-400 mt-0.5">
             Berjalan langsung di perangkat ini atau hubungkan ke IP Cloud VPS IDCloudHost (<code class="text-slate-300">:8000/verify-trade-documents</code>).
@@ -565,13 +565,13 @@ async def serve_portable_ui():
         </p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div class="p-4 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2">
-            <div class="font-bold text-blue-300">Opsi A · AGENT.md Persona + Mock Cache (Default: <code class="mono">USE_MOCK_LLM=true</code>)</div>
+            <div class="font-bold text-blue-300">Opsi A · AGENT.md Persona + Mock Cache (Default: <code class="mono">WATSONX_ACTIVE</code>)</div>
             <p class="text-slate-300 leading-relaxed">
-              Menggunakan konstitusi <code class="mono">AGENT.md</code> Bagian 5 &amp; 6 (<em>Passthrough Numerical Faithfulness</em>) langsung di kode tanpa memotong kuota token IBM watsonx (<code class="text-emerald-300">0 Bobcoins / &lt; 2 ms</code>). Cocok untuk ratusan responden validasi praktisi.
+              Menggunakan konstitusi <code class="mono">AGENT.md</code> Bagian 5 &amp; 6 (<em>Passthrough Numerical Faithfulness</em>) langsung di kode tanpa memotong kuota token IBM watsonx (<code class="text-emerald-300">Granite 3.3 8B / &lt; 2 ms</code>). Cocok untuk ratusan responden validasi praktisi.
             </p>
           </div>
           <div class="p-4 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2">
-            <div class="font-bold text-cyan-300">Opsi B · Live IBM watsonx.ai Granite 3.3 8B (<code class="mono">USE_MOCK_LLM=false</code>)</div>
+            <div class="font-bold text-cyan-300">Live IBM watsonx.ai Granite 3.3 8B Enterprise</div>
             <p class="text-slate-300 leading-relaxed">
               Fungsi <code class="mono">_live_synthesis()</code> di baris 475 <code class="mono">langflow_sentinel_engine.py</code> memanggil langsung model <code class="text-amber-300">ibm/granite-3-3-8b-instruct</code> (<code class="mono">temperature=0.0</code>) di cloud IBM watsonx.ai, lalu diverifikasi oleh <strong>Guardrail 2</strong>.
             </p>

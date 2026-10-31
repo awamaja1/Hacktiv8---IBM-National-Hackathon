@@ -142,7 +142,7 @@ python langflow_sentinel_engine.py serve --port 8000
 | `POST /verify-trade-documents` | Runs Guardrail 1, 6-layer deterministic engine, synthesis, and Guardrail 2 (`evaluate_claim_faithfulness`) |
 | `POST /extract-and-verify` | Runs `extract_documents_with_ai()` on unstructured text (`_live_extract` Granite 3.3 8B or `_regex_extract`) + Completeness Gate + `run_pipeline()` |
 | `GET /benchmark-suite` | Returns the 40-case benchmark suite metadata and confusion matrix metrics |
-| `GET /health` | Health check (`{"status": "ok", "use_mock_llm": true, "version": "1.0.0"}`) |
+| `GET /health` | Health check (`{"status": "ok", "llm_provider": "watsonx.ai", "version": "1.0.0"}`) |
 
 ## 6. Go-To-Market (Kotter's *Leading Change*) & Horizontal Market Expansion
 

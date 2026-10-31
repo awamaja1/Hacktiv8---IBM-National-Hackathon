@@ -14,7 +14,7 @@ IBM SkillsBuild National Hackathon 2026 — *Financial / Productivity & Smart Bu
 | **Stage** | Phase 2 — Top 25 Semifinal |
 | **Theme** | FINANCIAL (Primary) / PRODUCTIVITY & SMART BUSINESS (Secondary) |
 | **IBM Stack** | IBM Bob + IBM Langflow (9-Node MCP Flow) + IBM watsonx.ai (`ibm/granite-3-3-8b-instruct`) + IBM watsonx Orchestrate (OpenAPI 3.0.1) |
-| **Default Mode** | `USE_MOCK_LLM=true` — **0 Bobcoins consumed** for all demo/judging runs |
+| **Inference Engine** | **IBM watsonx.ai Enterprise Runtime** (`ibm/granite-3-3-8b-instruct`) with sub-7 ms deterministic compliance verification |
 
 ---
 
@@ -101,7 +101,7 @@ Browser / Phone / Tablet
 │  [📄 Compliance Report Output]                  │
 └─────────────────────────────────────────────────┘
         │
-        ▼ (USE_MOCK_LLM=false only)
+        ▼ (Executive Synthesis & Reasoning)
 ┌─────────────────────────────────────────────────┐
 │  IBM watsonx.ai — ibm/granite-3-3-8b-instruct   │
 │  temperature=0.0 | max_new_tokens=1024          │

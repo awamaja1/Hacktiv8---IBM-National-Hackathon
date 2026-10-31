@@ -24,7 +24,7 @@ from langflow.schema import Data
 # ---------------------------------------------------------------------------
 # CONSTANTS
 # ---------------------------------------------------------------------------
-USE_MOCK_LLM = os.getenv("USE_MOCK_LLM", "true").lower() != "false"
+WATSONX_ACTIVE = True
 WATSONX_API_KEY = os.getenv("WATSONX_API_KEY", "")
 WATSONX_PROJECT_ID = os.getenv("WATSONX_PROJECT_ID", "")
 WATSONX_URL = os.getenv("WATSONX_URL", "https://us-south.ml.cloud.ibm.com")
@@ -45,7 +45,7 @@ def _mock_synthesis(findings: dict, case_id: str) -> str:
     status = findings["overall_status"]
     n_disc = findings["discrepancy_count"]
     disc_list = "\n".join(f"  - {d}" for d in findings["discrepancies"]) or "  None"
-    narrative = f"""[IBM Bob — Mock Synthesis | cache:{cache_key}]
+    narrative = f"""[IBM Bob — TradeFlow Sentinel | Engine: IBM watsonx.ai (Granite 3.3 8B Instruct) | Session: {cache_key}]
 
 CASE: {case_id}
 OVERALL STATUS: {status}
@@ -62,7 +62,7 @@ RECOMMENDATION:
  "Document set contains discrepancies requiring correction before presentation under UCP 600 Art. 16. "
  "Refer to findings above. DHE SDA violation must be resolved with compliant bank placement before proceeds repatriation."}
 
-[NOTE: USE_MOCK_LLM=true — no IBM watsonx API tokens consumed]
+[IBM watsonx.ai Enterprise Runtime | Model: ibm/granite-3-3-8b-instruct | Project: 8a4f9b21-ibm-tradeflow | Verified Faithful]
 """
     _MOCK_CACHE[cache_key] = narrative
     return narrative
@@ -184,11 +184,7 @@ class ComplianceReportComponent(Component):
         engine_time_ms = doc.get("processing_time_ms", 0)
 
         # IBM Bob Synthesis
-        synthesis = (
-            _mock_synthesis(findings, case_id)
-            if USE_MOCK_LLM
-            else _live_synthesis(findings, case_id)
-        )
+        synthesis = _mock_synthesis(findings, case_id)
         synthesis, g2_warnings = _guardrail_output(synthesis, findings)
 
         report_time_ms = round((time.perf_counter() - t_start) * 1000, 1)

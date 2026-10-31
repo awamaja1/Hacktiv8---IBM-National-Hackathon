@@ -1,0 +1,194 @@
+<!-- =============================================================================
+     TradeFlow Sentinel — Archived Tab 5: Feedback Praktisi
+     Archived on: 2026-10-31
+     Purpose: Practitioner consultation & evidence collection for Komdigi & Judges
+     ============================================================================= -->
+
+<!-- Tab Navigation Button -->
+<button class="tab-btn px-4 py-2.5 rounded-t-xl border border-slate-200 text-sm font-semibold bg-white text-slate-600 flex items-center gap-2" onclick="showTab('tab-feedback', this)">
+  <span>📝</span> <span>Feedback Praktisi</span>
+</button>
+
+<!-- Tab 5 Content Container -->
+<div id="tab-feedback" class="space-y-4">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div class="lg:col-span-6 glass-card rounded-2xl p-5 shadow-sm border border-slate-200/80 space-y-4">
+      <div>
+        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <span>📝</span> Form Validasi Praktisi (Komdigi &amp; Juri)
+        </h2>
+        <p class="text-xs text-slate-500 mt-0.5">Evidence konsultasi praktisi perbankan &amp; eksportir. Pengisian memerlukan waktu ~60 detik.</p>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-700">Nama / Inisial <span class="text-rose-500">*</span></label>
+          <input id="fb-name" type="text" placeholder="e.g. BW (Budi Wijaya)" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 bg-slate-50/50 focus:bg-white focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-700">Jabatan / Role <span class="text-rose-500">*</span></label>
+          <input id="fb-role" type="text" placeholder="e.g. Trade Finance Compliance Officer" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 bg-slate-50/50 focus:bg-white focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-700">Jenis Institusi / Perusahaan <span class="text-rose-500">*</span></label>
+          <select id="fb-company" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 bg-slate-50/50 focus:bg-white">
+            <option value="">-- Pilih Kategori --</option>
+            <option value="Bank BUMN (HIMBARA)">Bank BUMN (HIMBARA)</option>
+            <option value="Bank Swasta Devisa">Bank Swasta Devisa</option>
+            <option value="Eksportir SDA (CPO / Batubara / Mineral)">Eksportir SDA (CPO / Batubara / Mineral)</option>
+            <option value="Regulator / Bank Indonesia / Bea Cukai">Regulator / Bank Indonesia / Bea Cukai</option>
+            <option value="Praktisi Legal &amp; Konsultan Trade">Praktisi Legal &amp; Konsultan Trade</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-700">Skenario yang Diuji <span class="text-rose-500">*</span></label>
+          <select id="fb-scenario" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 bg-slate-50/50 focus:bg-white">
+            <option value="CASE_1_COMPLIANT_CPO">CASE 1 — CPO Patuh (Compliant)</option>
+            <option value="CASE_2_DISCREPANT_COAL">CASE 2 — Batubara Tidak Patuh (Discrepant)</option>
+            <option value="BENCHMARK_SUITE_40">Pengujian Seluruh Benchmark 40 Kasus</option>
+            <option value="AI_DOCUMENT_EXTRACTION">Fitur Ekstraksi Dokumen AI</option>
+          </select>
+        </div>
+
+        <!-- Star Ratings -->
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <label class="text-xs font-semibold text-slate-700 block mb-1">Kemudahan Penggunaan</label>
+            <div id="usability-stars" class="flex gap-1 text-slate-300"></div>
+            <input type="hidden" id="fb-usability" value="5">
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <label class="text-xs font-semibold text-slate-700 block mb-1">Dampak Nilai Bisnis</label>
+            <div id="benefit-stars" class="flex gap-1 text-slate-300"></div>
+            <input type="hidden" id="fb-benefit" value="5">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-slate-700">Testimoni / Catatan Praktisi</label>
+          <textarea id="fb-testimonial" rows="3" placeholder="Sebutkan hal yang paling berdampak atau saran perbaikan..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 bg-slate-50/50 focus:bg-white"></textarea>
+        </div>
+
+        <button onclick="submitFeedback()" class="w-full py-3 bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 text-white font-bold rounded-xl text-xs shadow-md transition">
+          📤 Kirim Evaluasi &amp; Simpan Log Bukti
+        </button>
+      </div>
+      <div id="fb-result" class="hidden"></div>
+    </div>
+
+    <!-- Feedback Matrix Live Viewer -->
+    <div class="lg:col-span-6 glass-card rounded-2xl p-5 shadow-sm border border-slate-200/80 space-y-3 flex flex-col">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <span>📊</span> Rekapitulasi Validasi Praktisi
+        </h2>
+        <button onclick="loadFeedbackMatrix()" class="text-xs px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700 transition">
+          🔄 Refresh
+        </button>
+      </div>
+      <p class="text-xs text-slate-500">Kutipan dan statistik evaluasi yang tersimpan di server untuk pelaporan:</p>
+      <div id="feedback-matrix" class="flex-1 min-h-[300px] p-4 bg-slate-900 text-slate-200 rounded-xl font-mono text-xs overflow-y-auto whitespace-pre-wrap leading-relaxed border border-slate-800">
+Memuat data validasi dari server...
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ARCHIVED FEEDBACK LOGIC
+// ============================================================
+function buildStars(containerId, inputId) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  c.innerHTML = '';
+  const currentVal = parseInt(document.getElementById(inputId)?.value) || 5;
+
+  const renderState = (score) => {
+    c.querySelectorAll('.star-btn').forEach((btn, idx) => {
+      btn.className = `star-btn text-xl cursor-pointer select-none ${idx < score ? 'text-amber-400' : 'text-slate-300'}`;
+    });
+  };
+
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = '★';
+    b.className = `star-btn text-xl cursor-pointer select-none ${i <= currentVal ? 'text-amber-400' : 'text-slate-300'}`;
+    b.onmouseenter = () => renderState(i);
+    b.onmouseleave = () => renderState(parseInt(document.getElementById(inputId).value) || 5);
+    b.onclick = function () {
+      document.getElementById(inputId).value = i;
+      renderState(i);
+    };
+    c.appendChild(b);
+  }
+}
+
+async function submitFeedback() {
+  const name = document.getElementById('fb-name').value.trim();
+  const role = document.getElementById('fb-role').value.trim();
+  const company = document.getElementById('fb-company').value;
+  const scenario = document.getElementById('fb-scenario').value;
+  const usability = parseInt(document.getElementById('fb-usability').value) || 5;
+  const benefit = parseInt(document.getElementById('fb-benefit').value) || 5;
+  const testimonial = document.getElementById('fb-testimonial').value.trim();
+  const resDiv = document.getElementById('fb-result');
+
+  if (!name || !role || !company || !scenario) {
+    resDiv.classList.remove('hidden');
+    resDiv.innerHTML = `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 font-medium">⚠️ Harap lengkapi semua kolom bertanda bintang (*) sebelum mengirim.</div>`;
+    return;
+  }
+
+  const payload = {
+    practitioner_name: name,
+    role_title: role,
+    company_type: company,
+    scenario_tested: scenario,
+    usability_score: usability,
+    benefit_score: benefit,
+    testimonial: testimonial || null
+  };
+
+  const apiUrl = (document.getElementById('api-url')?.value || '').trim().replace(/\/$/, '') || 'http://localhost:8000';
+  try {
+    const resp = await fetch(`${apiUrl}/validation-feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const j = await resp.json();
+    resDiv.classList.remove('hidden');
+    resDiv.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 font-semibold">✅ Feedback berhasil disimpan! Total respon tercatat: ${j.total_responses || 1}.</div>`;
+    loadFeedbackMatrix();
+  } catch (e) {
+    resDiv.classList.remove('hidden');
+    resDiv.innerHTML = `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-900">Gagal mengirim feedback: ${e.message}</div>`;
+  }
+}
+
+async function loadFeedbackMatrix() {
+  const apiUrl = (document.getElementById('api-url')?.value || '').trim().replace(/\/$/, '') || 'http://localhost:8000';
+  const el = document.getElementById('feedback-matrix');
+  if (!el) return;
+  try {
+    const resp = await fetch(`${apiUrl}/validation-feedback`);
+    const j = await resp.json();
+    const responses = j.responses || [];
+    if (!responses.length) {
+      el.textContent = 'Belum ada tanggapan feedback tersimpan di server.';
+      return;
+    }
+    let md = `### Rekapitulasi Validasi Praktisi (Total: ${responses.length})\n\n`;
+    md += `| Nama | Peran / Jabatan | Institusi | Skenario | Usability | Dampak | Testimoni |\n`;
+    md += `| :--- | :--- | :--- | :--- | :---: | :---: | :--- |\n`;
+    responses.forEach(r => {
+      md += `| ${r.practitioner_name} | ${r.role_title} | ${r.company_type} | ${r.scenario_tested} | ${r.usability_score}/5 | ${r.benefit_score}/5 | "${r.testimonial || '-'}" |\n`;
+    });
+    el.textContent = md;
+  } catch (e) {
+    el.textContent = `Tidak dapat memuat matriks feedback: ${e.message}`;
+  }
+}
+</script>

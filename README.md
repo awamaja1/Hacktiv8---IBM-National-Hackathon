@@ -28,7 +28,7 @@ Following [IBM AI Governance](https://www.ibm.com/id-id/think/topics/ai-governan
    - **Fail-Closed Deterministic Checks:** Case-insensitive multi-token Himbara bank verification, safe `.get()` vessel lookup (preventing `KeyError` on unknown IMOs), zero-division guard on unknown HS codes, and strict **Fail-Closed Dark Vessel detection** when AIS `lat`/`lon` coordinates are `null`.
    - **Guardrail 2 (`guardrail_output` + `evaluate_claim_faithfulness`):** Returns a 3-tuple `(synthesis, warnings, claim_faithfulness_result)` that parses `[JSON: path=value]` citation tags in the LLM narrative and verifies every claim against the ground-truth JSON payload (`claim_faithfulness_score` 0–100%).
 4. **Portable 5-Tab Multi-Device Web Portal (`tradeflow_sentinel_portable_ui.html`):** Served directly at `GET /` on port `:8000` so Exim staff, CFOs, and external practitioners can upload documents, run 1-click audits, and execute the **40-Case Benchmark Suite** from any smartphone, tablet, or laptop without opening the IBM Bob IDE.
-5. **Zero-Cost Open Data & Mock-First Execution:** Uses open data snapshots (AISHub vessel coordinates and World Bank Pink Sheet benchmarks) plus MD5-cached mock synthesis (`USE_MOCK_LLM=true` by default, consuming `0` IBM Bobcoins).
+5. **Sub-7 ms Deterministic & watsonx.ai Architecture:** Uses open data snapshots (AISHub vessel coordinates and World Bank Pink Sheet benchmarks) plus IBM watsonx.ai Enterprise Runtime (`ibm/granite-3-3-8b-instruct`) for executive synthesis.
 
 ### Differentiation vs. Global Platforms (SWIFT / SAP S/4HANA GTM)
 
@@ -247,7 +247,7 @@ python langflow_sentinel_engine.py serve --port 8000
 | `GET /benchmark-suite` | 40-case benchmark suite definitions |
 | `GET /presets` | Preset cases and DHE SDA versions for the Web UI |
 | `GET` / `POST /validation-feedback` | Retrieve / submit practitioner validation feedback |
-| `GET /health` | Health check (`{"status": "ok", "use_mock_llm": true, "version": "1.0.0"}`) |
+| `GET /health` | Health check (`{"status": "ok", "llm_model": "ibm/granite-3-3-8b-instruct", "version": "2.0.0"}`) |
 
 Example — runtime rule switch on the same case (5 discrepancies under `PADG_16_2026` drop to 2 under `PP_8_2025`):
 

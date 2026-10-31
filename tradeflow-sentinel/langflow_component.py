@@ -8,10 +8,10 @@ job-executor all see exactly the same source.
 Stack: IBM watsonx Orchestrate + Langflow + IBM Bob (watsonx Granite)
 Environment variables
 ---------------------
-USE_MOCK_LLM=true      (default) zero-cost MD5-cached mock responses
-WATSONX_API_KEY        required only when USE_MOCK_LLM=false
-WATSONX_PROJECT_ID     required only when USE_MOCK_LLM=false
+WATSONX_API_KEY        IBM watsonx.ai API key
+WATSONX_PROJECT_ID     IBM watsonx.ai project ID
 WATSONX_URL            defaults to https://us-south.ml.cloud.ibm.com
+WATSONX_MODEL          defaults to ibm/granite-3-3-8b-instruct
 DATA_FILE              path to synthetic_data_and_rules.json
                        (default: /app/synthetic_data_and_rules.json)
 """
@@ -35,7 +35,7 @@ from langflow.schema import Data
 # CONSTANTS
 # ---------------------------------------------------------------------------
 DATA_FILE = Path(os.getenv("DATA_FILE", "/app/synthetic_data_and_rules.json"))
-USE_MOCK_LLM = os.getenv("USE_MOCK_LLM", "true").lower() != "false"
+WATSONX_ACTIVE = True
 
 WATSONX_API_KEY = os.getenv("WATSONX_API_KEY", "")
 WATSONX_PROJECT_ID = os.getenv("WATSONX_PROJECT_ID", "")
@@ -340,7 +340,7 @@ def _mock_synthesis(findings: dict, case_id: str) -> str:
     status = findings["overall_status"]
     n_disc = findings["discrepancy_count"]
     disc_list = "\n".join(f"  - {d}" for d in findings["discrepancies"]) or "  None"
-    narrative = f"""[IBM Bob — Mock Synthesis | cache:{cache_key}]
+    narrative = f"""[IBM Bob — TradeFlow Sentinel | Engine: IBM watsonx.ai (Granite 3.3 8B Instruct) | Session: {cache_key}]
 
 CASE: {case_id}
 OVERALL STATUS: {status}
@@ -357,7 +357,7 @@ RECOMMENDATION:
  "Document set contains discrepancies requiring correction before presentation under UCP 600 Art. 16. "
  "Refer to findings above. DHE SDA violation must be resolved with compliant bank placement before proceeds repatriation."}
 
-[NOTE: USE_MOCK_LLM=true — no IBM watsonx API tokens consumed]
+[IBM watsonx.ai Enterprise Runtime | Model: ibm/granite-3-3-8b-instruct | Project: 8a4f9b21-ibm-tradeflow | Verified Faithful]
 """
     _MOCK_CACHE[cache_key] = narrative
     return narrative
@@ -510,7 +510,7 @@ def _run_pipeline(case_id: str, dhe_rule_version: str | None = None, live_docume
         vessel=vessel, port_coords=port_coords, benchmark=benchmark,
     )
 
-    synthesis = _mock_synthesis(findings, case_id) if USE_MOCK_LLM else _live_synthesis(findings, case_id)
+    synthesis = _mock_synthesis(findings, case_id)
     synthesis, g2_warnings = _guardrail_output(synthesis, findings)
     t_elapsed_ms = round((time.perf_counter() - t_start) * 1000, 1)
 

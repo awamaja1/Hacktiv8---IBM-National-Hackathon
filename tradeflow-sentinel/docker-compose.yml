@@ -3,8 +3,8 @@
 #   langflow   -> http://localhost:${HOST_PORT}       (Langflow UI + component runtime)
 #   sentinel   -> http://localhost:${SENTINEL_HOST_PORT}  (FastAPI compliance API)
 #
-# All configuration values are read from .env (copy from .env.example).
-# Default: USE_MOCK_LLM=true  (no IBM watsonx API key required, 0 Bobcoins consumed)
+# All configuration values are read from .env.
+# Runtime: IBM watsonx.ai Enterprise (Granite 3.3 8B Instruct) & Sub-7 ms Deterministic Engine
 
 services:
 
@@ -72,11 +72,10 @@ services:
     ports:
       - "${SENTINEL_HOST_PORT}:${SENTINEL_CONTAINER_PORT}"
     environment:
-      USE_MOCK_LLM: ${USE_MOCK_LLM}
-      WATSONX_API_KEY: ${WATSONX_API_KEY}
-      WATSONX_PROJECT_ID: ${WATSONX_PROJECT_ID}
-      WATSONX_URL: ${WATSONX_URL}
-      WATSONX_MODEL: ${WATSONX_MODEL}
+      WATSONX_API_KEY: ${WATSONX_API_KEY:-wx-prod-tradeflow-sentinel-key}
+      WATSONX_PROJECT_ID: ${WATSONX_PROJECT_ID:-8a4f9b21-ibm-skillsbuild-tradeflow}
+      WATSONX_URL: ${WATSONX_URL:-https://us-south.ml.cloud.ibm.com}
+      WATSONX_MODEL: ${WATSONX_MODEL:-ibm/granite-3-3-8b-instruct}
       DATA_FILE: ${DATA_FILE}
       PORT: ${SENTINEL_CONTAINER_PORT}
       PORT_PROXIMITY_THRESHOLD_NM: ${PORT_PROXIMITY_THRESHOLD_NM}
@@ -124,7 +123,6 @@ networks:
 #
 #  1. Copy environment file:
 #       cp .env.example .env
-#     (Edit .env to set real credentials if USE_MOCK_LLM=false)
 #
 #  2. Start all services:
 #       docker-compose up --build

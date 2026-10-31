@@ -487,13 +487,17 @@
             "type": "string",
             "example": "ok"
           },
-          "use_mock_llm": {
-            "type": "boolean",
-            "example": true
+          "llm_provider": {
+            "type": "string",
+            "example": "watsonx.ai"
+          },
+          "llm_model": {
+            "type": "string",
+            "example": "ibm/granite-3-3-8b-instruct"
           },
           "version": {
             "type": "string",
-            "example": "1.0.0"
+            "example": "2.0.0"
           }
         }
       }
