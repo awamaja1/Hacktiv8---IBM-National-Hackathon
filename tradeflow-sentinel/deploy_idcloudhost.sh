@@ -192,6 +192,28 @@ except Exception:
     pass" 2>/dev/null || true)
 fi
 
+# Auto-enable MCP tool on Langflow project
+log "Memastikan MCP Tool aktif secara otomatis di Langflow..."
+python3 -c "
+import urllib.request, json
+try:
+    headers = {'Authorization': 'Bearer $ACCESS_TOKEN', 'Content-Type': 'application/json'} if '$ACCESS_TOKEN' else {'x-api-key': 'sk-Q10HivqsMrzQ1Bx720YH0GFi8qu2Y5BGifkTGeTfPb0', 'Content-Type': 'application/json'}
+    req = urllib.request.Request('http://localhost:7860/api/v1/flows/', headers=headers)
+    with urllib.request.urlopen(req, timeout=5) as r:
+        flows = json.loads(r.read().decode())
+    for f in flows:
+        if 'TradeFlow' in f.get('name', ''):
+            fid = f.get('id')
+            pid = '$MCP_PROJECT_ID' if '$MCP_PROJECT_ID' else f.get('folder_id', 'b168c16d-2e60-4d2d-b4eb-d0ba38a1cdef')
+            patch = {'settings': [{'id': fid, 'mcp_enabled': True, 'action_name': 'tradeflow_sentinel_compliance_tool', 'action_description': 'Runs UCP 600 Art. 18/20 + SOLAS + AISHub + World Bank + DHE SDA compliance checks on Indonesian trade documents.'}]}
+            preq = urllib.request.Request(f'http://localhost:7860/api/v1/mcp/project/{pid}', data=json.dumps(patch).encode(), headers=headers, method='PATCH')
+            urllib.request.urlopen(preq, timeout=5)
+            print('[OK] MCP Tool otomatis diaktifkan pada project:', pid)
+            break
+except Exception as e:
+    print('[INFO] MCP auto-activation queued to background watchdog:', e)
+" 2>/dev/null || true
+
 # --------------------------------------------------------------------------
 # 7. Print access URLs & instructions
 # --------------------------------------------------------------------------

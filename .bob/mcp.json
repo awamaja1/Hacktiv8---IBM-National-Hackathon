@@ -10,7 +10,7 @@
         "streamablehttp",
         "--headers",
         "x-api-key",
-        "sk-YKOTBGB6xnyvg7qTyjuXaOjG3CiN6N7ACq5_90ZVmmU",
+        "sk-Q10HivqsMrzQ1Bx720YH0GFi8qu2Y5BGifkTGeTfPb0",
         "http://localhost:7860/api/v1/mcp/project/b168c16d-2e60-4d2d-b4eb-d0ba38a1cdef/streamable"
       ]
     }

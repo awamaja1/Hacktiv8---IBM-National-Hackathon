@@ -2,13 +2,67 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TradeFlow Sentinel — Portable Web UI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#1e3a8a">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TradeFlow Sentinel">
+<meta name="application-name" content="TradeFlow Sentinel">
+<meta name="description" content="Adaptive Trade Finance & DHE SDA Compliance Automation (UCP 600, ISBP 745, SOLAS, AISHub, PADG 16/2026)">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<title>TradeFlow Sentinel — Adaptive Trade Finance &amp; DHE SDA Compliance</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; }
-  .tab-btn { transition: all 0.2s; }
-  .tab-btn.active { background: #1d4ed8; color: white; border-color: #1d4ed8; }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: contain;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  /* Mobile-native zoom prevention: keep font-size at least 16px */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  /* Touch target & instant press feedback */
+  button, a, [role="button"], .tab-btn {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  button:active, .tab-btn:active {
+    transform: scale(0.98);
+    transition: transform 80ms ease-out;
+  }
+  .tab-btn { transition: all 0.2s; white-space: nowrap; }
+  .tab-btn.active { background: #1d4ed8; color: white; border-color: #1d4ed8; box-shadow: 0 2px 8px rgba(29, 78, 216, 0.3); }
+  @media (hover: hover) and (pointer: fine) {
+    .tab-btn:hover:not(.active) {
+      background: #f1f5f9;
+      color: #1e3a8a;
+    }
+    button:hover {
+      filter: brightness(0.96);
+    }
+  }
+  .tab-nav-container {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+  .tab-nav-container::-webkit-scrollbar {
+    display: none;
+  }
   .check-card.PASS { border-left: 4px solid #16a34a; }
   .check-card.FAIL { border-left: 4px solid #dc2626; }
   .check-card.NOT_APPLICABLE { border-left: 4px solid #94a3b8; }
@@ -27,22 +81,22 @@
 <body class="bg-gray-50 min-h-screen">
 
 <!-- Header -->
-<header class="bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg">
-  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+<header class="bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg sticky top-0 z-30">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
     <div>
-      <h1 class="text-xl font-bold tracking-tight">🛡️ TradeFlow Sentinel</h1>
+      <h1 class="text-xl font-bold tracking-tight flex items-center gap-2">🛡️ TradeFlow Sentinel</h1>
       <p class="text-blue-200 text-xs">Adaptive Trade Finance &amp; DHE SDA Compliance Automation · Phase 2 Semifinal</p>
     </div>
-    <div class="flex flex-col items-end gap-1">
-      <span id="mode-badge" class="text-xs px-2 py-0.5 rounded-full bg-yellow-400 text-yellow-900 font-semibold">MOCK MODE (0 Bobcoins)</span>
+    <div class="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-1">
+      <span id="mode-badge" class="text-xs px-2 py-0.5 rounded-full bg-yellow-400 text-yellow-900 font-semibold shadow-sm">MOCK MODE (0 Bobcoins)</span>
       <span class="text-xs text-blue-200">IBM SkillsBuild National Hackathon 2026</span>
     </div>
   </div>
 </header>
 
-<!-- Tabs -->
-<div class="max-w-6xl mx-auto px-4 mt-4">
-  <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-0">
+<!-- Tabs Navigation (Responsive Horizontal Scroll) -->
+<div class="max-w-6xl mx-auto px-4 mt-3">
+  <div class="tab-nav-container flex gap-2 border-b border-gray-200 pb-1">
     <button class="tab-btn active px-4 py-2 rounded-t-lg border border-gray-200 text-sm font-medium" onclick="showTab('tab-audit', this)">📋 Audit Kepatuhan</button>
     <button class="tab-btn px-4 py-2 rounded-t-lg border border-gray-200 text-sm font-medium bg-white text-gray-600" onclick="showTab('tab-extract', this)">📄 Upload Dokumen (AI Extractor)</button>
     <button class="tab-btn px-4 py-2 rounded-t-lg border border-gray-200 text-sm font-medium bg-white text-gray-600" onclick="showTab('tab-benchmark', this)">🧪 Benchmark Suite (40 Cases)</button>
@@ -128,27 +182,27 @@
             </div>
             <div>
               <label class="text-xs text-gray-500 font-medium">L/C Amount (USD)</label>
-              <input id="f-lc-amount" type="number" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input id="f-lc-amount" type="number" inputmode="decimal" enterkeyhint="next" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-gray-500 font-medium">Invoice Total FOB (USD)</label>
-              <input id="f-total-fob" type="number" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input id="f-total-fob" type="number" inputmode="decimal" enterkeyhint="next" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
               <label class="text-xs text-gray-500 font-medium">Unit Price (USD/MT)</label>
-              <input id="f-unit-price" type="number" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input id="f-unit-price" type="number" inputmode="decimal" enterkeyhint="next" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-gray-500 font-medium">Vessel Name</label>
-              <input id="f-vessel" type="text" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input id="f-vessel" type="text" enterkeyhint="next" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
               <label class="text-xs text-gray-500 font-medium">IMO Number</label>
-              <input id="f-imo" type="text" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input id="f-imo" type="text" inputmode="numeric" enterkeyhint="next" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
@@ -184,7 +238,7 @@
             </div>
             <div>
               <label class="text-xs text-gray-500 font-medium">Requested FX Conversion %</label>
-              <input id="f-fx-pct" type="number" min="0" max="100" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input id="f-fx-pct" type="number" min="0" max="100" inputmode="decimal" enterkeyhint="done" class="w-full border rounded-lg px-2 py-1.5 text-xs mt-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div>
@@ -1095,17 +1149,37 @@ function runChat() {
   // Intent extraction (replicates 3 parallel Langflow Intent & Payload Extractor nodes)
   let caseId = null, dheRule = null, docData = null;
 
-  // extract_case_id
-  const caseMatch = raw.match(/\b(CASE_[A-Z0-9_]+|LIVE_DEMO_[A-Z_]+)\b/i);
-  if(caseMatch) caseId = caseMatch[1].toUpperCase();
-
-  // extract_dhe_rule
-  const ruleMatch = raw.match(/\b(PADG_16_2026|PP_8_2025|BASELINE_PRE_2025)\b/i);
-  if(ruleMatch) dheRule = ruleMatch[1].toUpperCase();
-
-  // extract_json — detect embedded JSON payload
+  // 1. extract_json — detect embedded JSON payload FIRST
   const jsonMatch = raw.match(/\{[\s\S]+\}/);
-  if(jsonMatch) { try { docData = JSON.parse(jsonMatch[0]); } catch(e){} }
+  if(jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if(parsed && typeof parsed === 'object') {
+        docData = parsed;
+        if(parsed.case_id && parsed.case_id !== 'CASE_ID') caseId = parsed.case_id;
+        if(parsed.dhe_rule_version) dheRule = parsed.dhe_rule_version;
+        // If nested document_data exists, unwrap so docData is the direct trade documents payload
+        if(parsed.document_data && typeof parsed.document_data === 'object') {
+          docData = parsed.document_data;
+          if(!caseId && parsed.document_data.case_id && parsed.document_data.case_id !== 'CASE_ID') {
+            caseId = parsed.document_data.case_id;
+          }
+        }
+      }
+    } catch(e){}
+  }
+
+  // 2. extract_case_id (only if not found in JSON, and strictly exclude literal key 'CASE_ID')
+  if(!caseId) {
+    const caseMatch = raw.match(/\b(CASE_(?!ID\b)[A-Z0-9_]+|LIVE_DEMO_[A-Z_]+)\b/i);
+    if(caseMatch) caseId = caseMatch[1].toUpperCase();
+  }
+
+  // 3. extract_dhe_rule (only if not in JSON)
+  if(!dheRule) {
+    const ruleMatch = raw.match(/\b(PADG_16_2026|PP_8_2025|BASELINE_PRE_2025)\b/i);
+    if(ruleMatch) dheRule = ruleMatch[1].toUpperCase();
+  }
 
   const intentEl = document.getElementById('chat-intent');
   intentEl.classList.remove('hidden');
@@ -1119,6 +1193,7 @@ function runChat() {
 
   if(docData) {
     docData.dhe_rule_version = resolvedRule;
+    if(caseId && !docData.case_id) docData.case_id = caseId;
     const resultDiv = document.getElementById('chat-result'); resultDiv.innerHTML = '';
     showLoading(true);
     runAudit(docData, caseId||'CHAT_PAYLOAD').then(()=>showLoading(false));
@@ -1203,6 +1278,13 @@ async function loadFeedbackMatrix() {
     j.responses.forEach(r => { md += `| ${r.name_initials} | ${r.role_title} | ${r.company_type} | ${r.scenario_tested} | ${r.usability_score}/5 | ${r.benefit_score}/5 | ${r.testimonial||'—'} |\n`; });
     document.getElementById('feedback-matrix').textContent = md;
   } catch(e) { alert('Gagal memuat: ' + e.message); }
+// ============================================================
+// PWA SERVICE WORKER REGISTRATION (Offline Capability)
+// ============================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
 }
 </script>
 </body>

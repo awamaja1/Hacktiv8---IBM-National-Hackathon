@@ -52,7 +52,7 @@ from typing import Any, List, Optional
 try:
     from fastapi import FastAPI, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import HTMLResponse, JSONResponse
+    from fastapi.responses import HTMLResponse, JSONResponse, Response
     from pydantic import BaseModel
     import uvicorn
     _FASTAPI_AVAILABLE = True
@@ -1213,7 +1213,20 @@ def run_pipeline(case_id: str | None = None, dhe_rule_version: str | None = None
 
     if document_data:
         case = dict(document_data)
-        case_id = case_id or "LIVE_PAYLOAD"
+        # Unwrap nested document_data if present (e.g. from wrapped API body or LLM payload)
+        if "document_data" in case and isinstance(case["document_data"], dict):
+            inner = dict(case["document_data"])
+            if "case_id" in case and "case_id" not in inner:
+                inner["case_id"] = case["case_id"]
+            if "dhe_rule_version" in case and "dhe_rule_version" not in inner:
+                inner["dhe_rule_version"] = case["dhe_rule_version"]
+            if not case_id or case_id in ("CASE_ID", "LIVE_PAYLOAD"):
+                case_id = case.get("case_id") or inner.get("case_id")
+            case = inner
+
+        if not case_id or case_id == "CASE_ID":
+            case_id = case.get("case_id") or "LIVE_PAYLOAD"
+
         if "exporter_instructions" in case and "dhe_sda_transaction" not in case:
             case["dhe_sda_transaction"] = case["exporter_instructions"]
         if "lc_ref" in case and "lc_mt700_reference" not in case:
@@ -1252,6 +1265,8 @@ def run_pipeline(case_id: str | None = None, dhe_rule_version: str | None = None
         lc_ref = lc_refs[lc_key]
     elif case_id in cases and "lc_reference" in cases[case_id]:
         lc_ref = lc_refs[cases[case_id]["lc_reference"]]
+    elif "LIVE_DEMO" in str(case_id).upper() and "CASE_2_DISCREPANT_COAL" in cases:
+        lc_ref = lc_refs[cases["CASE_2_DISCREPANT_COAL"]["lc_reference"]]
     else:
         raise ValueError(f"Could not resolve LC reference for case '{case_id}'. Expected 'lc_mt700_reference' or 'lc_reference'.")
 
@@ -1320,6 +1335,80 @@ def run_pipeline(case_id: str | None = None, dhe_rule_version: str | None = None
     }
 
 
+async def _langflow_mcp_auto_enable_watchdog():
+    """Background watchdog: periodically verifies that Langflow has TradeFlow Sentinel MCP tool enabled.
+    Auto-enables it automatically whenever Langflow starts or restarts, avoiding manual re-configuration."""
+    import asyncio
+    import urllib.request
+    
+    probe_urls = [
+        "http://langflow:7860",
+        "http://host.docker.internal:7860",
+        "http://127.0.0.1:7860",
+        "http://localhost:7860",
+    ]
+    api_key = os.getenv("LANGFLOW_API_KEY", "sk-Q10HivqsMrzQ1Bx720YH0GFi8qu2Y5BGifkTGeTfPb0")
+
+    # Initial delay to give Langflow time to boot
+    await asyncio.sleep(5)
+
+    while True:
+        try:
+            for base_url in probe_urls:
+                try:
+                    token = None
+                    try:
+                        req_login = urllib.request.Request(f"{base_url}/api/v1/auto_login")
+                        with urllib.request.urlopen(req_login, timeout=3) as r:
+                            token = json.loads(r.read().decode()).get("access_token")
+                    except Exception:
+                        pass
+
+                    auth_hdr = {"Authorization": f"Bearer {token}"} if token else {"x-api-key": api_key}
+                    
+                    req_proj = urllib.request.Request(f"{base_url}/api/v1/projects/", headers=auth_hdr)
+                    with urllib.request.urlopen(req_proj, timeout=3) as r:
+                        projects = json.loads(r.read().decode())
+
+                    for p in projects:
+                        pid = p.get("id")
+                        req_mcp = urllib.request.Request(f"{base_url}/api/v1/mcp/project/{pid}", headers=auth_hdr)
+                        with urllib.request.urlopen(req_mcp, timeout=3) as r:
+                            mcp_info = json.loads(r.read().decode())
+                        
+                        tools = mcp_info.get("tools", [])
+                        need_patch = not tools or any(not t.get("mcp_enabled") for t in tools)
+                        if need_patch:
+                            req_flows = urllib.request.Request(f"{base_url}/api/v1/flows/", headers=auth_hdr)
+                            with urllib.request.urlopen(req_flows, timeout=3) as r:
+                                flows = json.loads(r.read().decode())
+                            for flow in flows:
+                                if "TradeFlow" in flow.get("name", ""):
+                                    flow_id = flow.get("id")
+                                    patch_body = {
+                                        "settings": [{
+                                            "id": flow_id,
+                                            "mcp_enabled": True,
+                                            "action_name": "tradeflow_sentinel_compliance_tool",
+                                            "action_description": "Runs UCP 600 Art. 18/20 + SOLAS + AISHub + World Bank + DHE SDA compliance checks on Indonesian trade documents."
+                                        }]
+                                    }
+                                    req_patch = urllib.request.Request(
+                                        f"{base_url}/api/v1/mcp/project/{pid}",
+                                        data=json.dumps(patch_body).encode("utf-8"),
+                                        headers={**auth_hdr, "Content-Type": "application/json"},
+                                        method="PATCH"
+                                    )
+                                    with urllib.request.urlopen(req_patch, timeout=5) as r:
+                                        print(f"[TradeFlow Watchdog] Auto-enabled MCP tool for flow '{flow.get('name')}' in project {pid}")
+                    break
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        await asyncio.sleep(20)
+
+
 # ===========================================================================
 # FASTAPI APPLICATION
 # ===========================================================================
@@ -1368,14 +1457,22 @@ if _FASTAPI_AVAILABLE:
     # -----------------------------------------------------------------------
     # Existing endpoints (preserved — backward compatible)
     # -----------------------------------------------------------------------
+    @app.on_event("startup")
+    async def on_startup():
+        import asyncio
+        asyncio.create_task(_langflow_mcp_auto_enable_watchdog())
+
     @app.post("/verify-trade-documents", summary="Verify trade documents for compliance")
     async def verify_trade_documents(body: VerifyRequest):
         try:
             doc_data = body.document_data if isinstance(body.document_data, dict) else None
-            if not body.case_id and not doc_data:
+            cid = body.case_id
+            if cid in ("CASE_ID", "LIVE_PAYLOAD", ""):
+                cid = None
+            if not cid and not doc_data:
                 raise ValueError("Either case_id or document_data must be provided.")
             result = run_pipeline(
-                case_id=body.case_id,
+                case_id=cid,
                 dhe_rule_version=body.dhe_rule_version,
                 document_data=doc_data
             )
@@ -1388,6 +1485,44 @@ if _FASTAPI_AVAILABLE:
     @app.get("/health")
     async def health():
         return {"status": "ok", "use_mock_llm": USE_MOCK_LLM, "version": "2.0.0"}
+
+    # -----------------------------------------------------------------------
+    # PWA Support — Manifest & Service Worker
+    # -----------------------------------------------------------------------
+    @app.get("/manifest.json", include_in_schema=False)
+    async def get_manifest():
+        return JSONResponse(content={
+            "name": "TradeFlow Sentinel",
+            "short_name": "TradeFlow",
+            "description": "Adaptive Trade Finance & DHE SDA Compliance Automation",
+            "start_url": "/",
+            "scope": "/",
+            "display": "standalone",
+            "orientation": "any",
+            "background_color": "#0b132b",
+            "theme_color": "#1e3a8a",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>",
+                    "sizes": "192x192 512x512",
+                    "type": "image/svg+xml",
+                    "purpose": "any maskable"
+                }
+            ]
+        })
+
+    @app.get("/sw.js", response_class=Response, include_in_schema=False)
+    async def get_sw():
+        sw_code = """const CACHE_NAME = 'tradeflow-sentinel-v2';
+self.addEventListener('install', event => { self.skipWaiting(); });
+self.addEventListener('activate', event => { event.waitUntil(clients.claim()); });
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
+});"""
+        return Response(content=sw_code, media_type="application/javascript")
 
     # -----------------------------------------------------------------------
     # GET / — Portable Web UI
